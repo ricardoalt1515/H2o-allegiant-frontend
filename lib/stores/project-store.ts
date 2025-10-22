@@ -21,7 +21,7 @@ const mapProjectSummary = (project: ProjectSummary | ProjectDetail): ProjectSumm
     name: project.name,
     client: project.client,
     sector: project.sector,
-    subsector: project.subsector || undefined,
+    subsector: project.subsector || '',
     location: project.location,
     status: project.status,
     progress: typeof project.progress === 'number' ? project.progress : 0,
@@ -76,6 +76,8 @@ interface ProjectState {
     proposalId: string,
     status: ProposalVersion['status']
   ) => Promise<void>
+  deleteProposal: (projectId: string, proposalId: string) => void
+  setProposalStatus: (projectId: string, proposalId: string, status: ProposalVersion['status']) => void
 
   // Timeline actions
   addTimelineEvent: (projectId: string, event: Omit<TimelineEvent, 'id'>) => Promise<void>
@@ -155,9 +157,10 @@ export const useProjectStore = create<ProjectState>()(
       loadProjects: async () => {
         const state = get()
         if (state.loading) {
-          return
+          return // Already loading, skip
         }
 
+        // Set loading IMMEDIATELY to prevent race condition
         set({ loading: true, error: null })
 
         try {
@@ -172,7 +175,7 @@ export const useProjectStore = create<ProjectState>()(
             projects: [],
             loading: false,
             dataSource: 'api',
-            error: error instanceof Error ? error.message : 'Error al cargar proyectos'
+            error: error instanceof Error ? error.message : 'Error loading projects'
           })
         }
       },
@@ -236,7 +239,7 @@ export const useProjectStore = create<ProjectState>()(
           await get().addTimelineEvent(summary.id, {
             type: 'version',
             title: 'Proyecto creado',
-            description: `Proyecto "${summary.name}" creado desde el asistente rápido`,
+            description: `Proyect "${summary.name}" creado desde el asistente rápido`,
             user: 'Usuario actual',
             timestamp: new Date().toISOString()
           })
@@ -300,14 +303,14 @@ export const useProjectStore = create<ProjectState>()(
         // Optimistic update: remove immediately from UI
         const previousState = get().projects
         const previousCurrent = get().currentProject
-        
+
         set(state => {
           state.projects = state.projects.filter(p => p.id !== id)
           if (state.currentProject?.id === id) {
             state.currentProject = null
           }
         })
-        
+
         try {
           await projectsAPI.deleteProject(id)
           // Success: keep the optimistic update
@@ -368,8 +371,32 @@ export const useProjectStore = create<ProjectState>()(
             }
           }
         })
+      },
 
-      deleteProposal: (projectId, proposalId) =>
+      updateProposalStatus: async (projectId: string, proposalId: string, status: ProposalVersion['status']) => {
+        set(state => {
+          if (state.currentProject?.id === projectId) {
+            const proposalIndex = state.currentProject.proposals.findIndex(p => p.id === proposalId)
+            if (proposalIndex !== -1) {
+              state.currentProject.proposals[proposalIndex] = {
+                ...state.currentProject.proposals[proposalIndex],
+                status
+              }
+              state.currentProject.updatedAt = new Date().toISOString()
+            }
+          }
+        })
+
+        await get().addTimelineEvent(projectId, {
+          type: 'proposal',
+          title: 'Estado de propuesta actualizado',
+          description: `Propuesta ${proposalId} → ${status}`,
+          user: 'Usuario actual',
+          timestamp: new Date().toISOString()
+        })
+      },
+
+      deleteProposal: (projectId: string, proposalId: string) => {
         set((state) => {
           if (!state.currentProject || state.currentProject.id !== projectId) return
 
@@ -380,8 +407,9 @@ export const useProjectStore = create<ProjectState>()(
             state.currentProject.updatedAt = new Date().toISOString()
           }
         })
+      },
 
-      setProposalStatus: (projectId, proposalId, status) =>
+      setProposalStatus: (projectId: string, proposalId: string, status: ProposalVersion['status']) => {
         set((state) => {
           if (!state.currentProject || state.currentProject.id !== projectId) return
 
@@ -393,14 +421,6 @@ export const useProjectStore = create<ProjectState>()(
             }
             state.currentProject.updatedAt = new Date().toISOString()
           }
-        })
-
-        await get().addTimelineEvent(projectId, {
-          type: 'proposal',
-          title: 'Estado de propuesta actualizado',
-          description: `Propuesta ${proposalId} → ${status}`,
-          user: 'Usuario actual',
-          timestamp: new Date().toISOString()
         })
       },
 
@@ -467,6 +487,9 @@ export const useLoadProjectAction = () => useProjectStore(state => state.loadPro
 
 export const useProjectDataSource = () => useProjectStore(state => state.dataSource)
 
+// Global flag to prevent multiple simultaneous loads across different component instances
+let isLoadingGlobal = false
+
 export const useEnsureProjectsLoaded = () => {
   const projectsCount = useProjectStore(state => state.projects.length)
   const loading = useProjectStore(state => state.loading)
@@ -476,14 +499,20 @@ export const useEnsureProjectsLoaded = () => {
   useEffect(() => {
     // Verificar si hay token antes de hacer API call
     const hasToken = typeof window !== 'undefined' && localStorage.getItem('access_token')
-    
+
     // Solo cargar si:
     // 1. Hay token (usuario autenticado)
-    // 2. No está cargando
-    // 3. No hay proyectos
-    // 4. No hay error previo (evita infinite loop en 401)
-    if (hasToken && !loading && projectsCount === 0 && !error) {
-      void loadProjects()
+    // 2. No está cargando (store state)
+    // 3. No está cargando globalmente (prevents race condition)
+    // 4. No hay proyectos
+    // 5. No hay error previo (evita infinite loop en 401)
+    if (hasToken && !loading && !isLoadingGlobal && projectsCount === 0 && !error) {
+      isLoadingGlobal = true
+      void loadProjects().finally(() => {
+        isLoadingGlobal = false
+      })
     }
-  }, [loading, projectsCount, error, loadProjects])
+    // Note: loadProjects removed from deps to prevent unnecessary re-runs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, projectsCount, error])
 }

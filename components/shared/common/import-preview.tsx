@@ -56,24 +56,24 @@ export interface TargetField {
 const mockTargetFields: TargetField[] = [
   {
     id: "general-data.design-flow",
-    label: "Caudal de Diseño",
-    section: "Datos Generales",
+    label: "Design Flow",
+    section: "General Data",
     type: "unit",
     currentValue: 50,
     unit: "L/s"
   },
   {
     id: "general-data.population-served",
-    label: "Población Servida",
-    section: "Datos Generales",
+    label: "Population Served",
+    section: "General Data",
     type: "unit",
     currentValue: 25000,
-    unit: "habitantes"
+    unit: "inhabitants"
   },
   {
     id: "raw-water-parameters.turbidity",
-    label: "Turbiedad",
-    section: "Parámetros del Agua Cruda",
+    label: "Turbidity",
+    section: "Raw Water Parameters",
     type: "unit",
     currentValue: 15,
     unit: "NTU"
@@ -81,30 +81,30 @@ const mockTargetFields: TargetField[] = [
   {
     id: "raw-water-parameters.ph",
     label: "pH",
-    section: "Parámetros del Agua Cruda",
+    section: "Raw Water Parameters",
     type: "number",
     currentValue: 7.2
   },
   {
     id: "raw-water-parameters.color",
-    label: "Color Aparente",
-    section: "Parámetros del Agua Cruda",
+    label: "Apparent Color",
+    section: "Raw Water Parameters",
     type: "unit",
     currentValue: 25,
     unit: "UPC"
   },
   {
     id: "raw-water-parameters.iron",
-    label: "Hierro Total",
-    section: "Parámetros del Agua Cruda",
+    label: "Total Iron",
+    section: "Raw Water Parameters",
     type: "unit",
     currentValue: 0.8,
     unit: "mg/L"
   },
   {
     id: "raw-water-parameters.hardness",
-    label: "Dureza Total",
-    section: "Parámetros del Agua Cruda",
+    label: "Total Hardness",
+    section: "Raw Water Parameters",
     type: "unit",
     currentValue: 180,
     unit: "mg/L CaCO₃"
@@ -161,7 +161,7 @@ function FieldMappingRow({
 
       {/* Detected Value */}
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Valor Detectado</Label>
+        <Label className="text-xs text-muted-foreground">Detected Value</Label>
         <p className="font-mono text-sm">
           {formatValue(mapping.detectedField.value, mapping.detectedField.unit)}
         </p>
@@ -172,7 +172,7 @@ function FieldMappingRow({
 
       {/* Target Field Selection */}
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Campo Destino</Label>
+        <Label className="text-xs text-muted-foreground">Target Field</Label>
         <Select
           value={mapping.targetField || ""}
           onValueChange={(value) =>
@@ -183,10 +183,10 @@ function FieldMappingRow({
           }
         >
           <SelectTrigger className="h-8">
-            <SelectValue placeholder="Seleccionar campo" />
+            <SelectValue placeholder="Select field" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No mapear</SelectItem>
+            <SelectItem value="">Do not map</SelectItem>
             {targetFields.map(field => (
               <SelectItem key={field.id} value={field.id}>
                 <div className="flex flex-col">
@@ -201,13 +201,13 @@ function FieldMappingRow({
 
       {/* Current Value */}
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Valor Actual</Label>
+        <Label className="text-xs text-muted-foreground">Current Value</Label>
         {currentTarget ? (
           <p className="text-sm text-muted-foreground">
-            {formatValue(currentTarget.currentValue, currentTarget.unit) || "Sin valor"}
+            {formatValue(currentTarget.currentValue, currentTarget.unit) || "No value"}
           </p>
         ) : (
-          <p className="text-xs text-muted-foreground italic">No seleccionado</p>
+          <p className="text-xs text-muted-foreground italic">Not selected</p>
         )}
       </div>
 
@@ -216,12 +216,12 @@ function FieldMappingRow({
         {mapping.isSelected && mapping.targetField ? (
           <div className="flex items-center space-x-1 text-green-600">
             <Check className="h-4 w-4" />
-            <span className="text-xs">Listo</span>
+            <span className="text-xs">Ready</span>
           </div>
         ) : (
           <div className="flex items-center space-x-1 text-muted-foreground">
             <X className="h-4 w-4" />
-            <span className="text-xs">Sin mapear</span>
+            <span className="text-xs">Not mapped</span>
           </div>
         )}
       </div>
@@ -233,22 +233,22 @@ function DataSourcePreview({ data }: { data: ExtractedData }) {
   const typeConfig = {
     laboratory: {
       icon: FileText,
-      label: "Análisis de Laboratorio",
+      label: "Laboratory Analysis",
       color: "text-blue-600 bg-blue-50"
     },
     excel: {
       icon: FileText,
-      label: "Archivo Excel",
+      label: "Excel File",
       color: "text-green-600 bg-green-50"
     },
     pdf: {
       icon: FileText,
-      label: "Documento PDF",
+      label: "PDF Document",
       color: "text-red-600 bg-red-50"
     },
     image: {
       icon: FileText,
-      label: "Imagen",
+      label: "Image",
       color: "text-purple-600 bg-purple-50"
     }
   }
@@ -273,7 +273,7 @@ function DataSourcePreview({ data }: { data: ExtractedData }) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Badge variant="outline">
-              {data.detectedFields.length} campos detectados
+              {data.detectedFields.length} fields detected
             </Badge>
             <Badge
               className={cn(
@@ -281,14 +281,14 @@ function DataSourcePreview({ data }: { data: ExtractedData }) {
                 data.confidence > 0.6 ? "text-yellow-600 bg-yellow-50" : "text-red-600 bg-red-50"
               )}
             >
-              {Math.round(data.confidence * 100)}% confianza
+              {Math.round(data.confidence * 100)}% confidence
             </Badge>
           </div>
 
           {/* Metadata */}
           {Object.keys(data.metadata).length > 0 && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Metadatos</Label>
+              <Label className="text-xs text-muted-foreground">Metadata</Label>
               <div className="text-xs space-y-1">
                 {Object.entries(data.metadata).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
@@ -356,9 +356,9 @@ export function ImportPreview({
     <div className={cn("space-y-6", className)}>
       {/* Header */}
       <div className="space-y-2">
-        <h2 className="text-2xl font-serif font-semibold">Vista Previa de Importación</h2>
+        <h2 className="text-2xl font-serif font-semibold">Import Preview</h2>
         <p className="text-muted-foreground">
-          Revisa y mapea los datos detectados antes de importarlos a la ficha técnica
+          Review and map the detected data before importing it to the technical sheet
         </p>
       </div>
 
@@ -370,7 +370,7 @@ export function ImportPreview({
               <FileText className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-2xl font-bold">{allDetectedFields.length}</p>
-                <p className="text-xs text-muted-foreground">Campos detectados</p>
+                <p className="text-xs text-muted-foreground">Fields detected</p>
               </div>
             </div>
           </CardContent>
@@ -382,7 +382,7 @@ export function ImportPreview({
               <Zap className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-2xl font-bold">{highConfidenceCount}</p>
-                <p className="text-xs text-muted-foreground">Alta confianza</p>
+                <p className="text-xs text-muted-foreground">High confidence</p>
               </div>
             </div>
           </CardContent>
@@ -394,7 +394,7 @@ export function ImportPreview({
               <Target className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-2xl font-bold">{selectedMappings.length}</p>
-                <p className="text-xs text-muted-foreground">Para importar</p>
+                <p className="text-xs text-muted-foreground">To import</p>
               </div>
             </div>
           </CardContent>
@@ -406,7 +406,7 @@ export function ImportPreview({
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <div>
                 <p className="text-2xl font-bold">{extractedData.length}</p>
-                <p className="text-xs text-muted-foreground">Fuentes de datos</p>
+                <p className="text-xs text-muted-foreground">Data sources</p>
               </div>
             </div>
           </CardContent>
@@ -415,8 +415,8 @@ export function ImportPreview({
 
       <Tabs defaultValue="mapping" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="mapping">Mapeo de Campos</TabsTrigger>
-          <TabsTrigger value="sources">Fuentes de Datos</TabsTrigger>
+          <TabsTrigger value="mapping">Field Mapping</TabsTrigger>
+          <TabsTrigger value="sources">Data Sources</TabsTrigger>
         </TabsList>
 
         <TabsContent value="mapping" className="space-y-4">
@@ -427,24 +427,24 @@ export function ImportPreview({
                 checked={selectedMappings.length === allDetectedFields.length}
                 onCheckedChange={handleSelectAll}
               />
-              <Label>Seleccionar todos</Label>
+              <Label>Select all</Label>
             </div>
 
             <div className="flex space-x-2">
               <Button variant="outline" size="sm" onClick={handleAutoMap}>
                 <Zap className="mr-2 h-4 w-4" />
-                Auto-mapear
+                Auto-map
               </Button>
             </div>
           </div>
 
           {/* Mapping Table Header */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-3 bg-muted/50 rounded-lg text-sm font-medium">
-            <div>Campo Detectado</div>
-            <div>Valor Detectado</div>
-            <div>Campo Destino</div>
-            <div>Valor Actual</div>
-            <div>Estado</div>
+            <div>Detected Field</div>
+            <div>Detected Value</div>
+            <div>Target Field</div>
+            <div>Current Value</div>
+            <div>Status</div>
           </div>
 
           {/* Field Mappings */}
@@ -476,8 +476,8 @@ export function ImportPreview({
         <Alert>
           <Check className="h-4 w-4" />
           <AlertDescription>
-            Se importarán <strong>{selectedMappings.length}</strong> campos.
-            Los valores existentes serán sobrescritos con los datos detectados.
+            <strong>{selectedMappings.length}</strong> fields will be imported.
+            Existing values will be overwritten with detected data.
           </AlertDescription>
         </Alert>
       )}
@@ -485,13 +485,13 @@ export function ImportPreview({
       {/* Actions */}
       <div className="flex justify-between pt-4 border-t">
         <Button variant="outline" onClick={onCancel}>
-          Cancelar
+          Cancel
         </Button>
         <Button
           onClick={() => onConfirmImport(selectedMappings)}
           disabled={selectedMappings.length === 0}
         >
-          Importar {selectedMappings.length} Campos
+          Import {selectedMappings.length} Fields
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>

@@ -36,7 +36,7 @@ export function IndustryComparison({
       <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-6">
         Comparación vs Industria
       </div>
-      
+
       <div className="space-y-6">
         {/* CAPEX comparison - minimalist */}
         <div className="grid md:grid-cols-2 gap-8">
@@ -51,7 +51,7 @@ export function IndustryComparison({
 
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-              Promedio Industria
+              Industry average
             </div>
             <div className="text-3xl font-bold tracking-tight text-muted-foreground">
               {formatCurrency(avgCapex)}
@@ -68,7 +68,7 @@ export function IndustryComparison({
 
         {/* Validation note - subtle */}
         <div className="text-sm text-muted-foreground">
-          Basado en {provenCases.length} proyectos similares
+          Based on {provenCases.length} similar projects
           {project.sector && ` en ${project.sector}`}
         </div>
       </div>

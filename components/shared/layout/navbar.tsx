@@ -98,6 +98,7 @@ export function NavBar() {
                   <Link
                     key={link.name}
                     href={link.href}
+                    suppressHydrationWarning
                     className={cn(
                       "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-300 hover:bg-primary/15 hover:text-primary",
                       isActive && "aqua-floating-chip"

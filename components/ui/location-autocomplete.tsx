@@ -35,35 +35,35 @@ interface LocationAutocompleteProps {
 // Mock location data - in a real app this would come from a geocoding service
 const MOCK_LOCATIONS: LocationSuggestion[] = [
   // Mexico
-  { id: "mx-1", name: "Ciudad de México", type: "city", fullName: "Ciudad de México, México", population: 9200000, context: "Capital nacional" },
-  { id: "mx-2", name: "Guadalajara", type: "city", fullName: "Guadalajara, Jalisco, México", population: 1500000, context: "Zona Metropolitana" },
-  { id: "mx-3", name: "Monterrey", type: "city", fullName: "Monterrey, Nuevo León, México", population: 1100000, context: "Centro industrial" },
-  { id: "mx-4", name: "Puebla", type: "city", fullName: "Puebla, Puebla, México", population: 700000, context: "Centro histórico" },
-  { id: "mx-5", name: "Tijuana", type: "city", fullName: "Tijuana, Baja California, México", population: 900000, context: "Frontera norte" },
-  { id: "mx-6", name: "León", type: "city", fullName: "León, Guanajuato, México", population: 800000, context: "Industria del calzado" },
-  { id: "mx-7", name: "Juárez", type: "city", fullName: "Ciudad Juárez, Chihuahua, México", population: 750000, context: "Frontera con EE.UU." },
-  { id: "mx-8", name: "Zapopan", type: "city", fullName: "Zapopan, Jalisco, México", population: 650000, context: "Área metropolitana GDL" },
-  { id: "mx-9", name: "Mérida", type: "city", fullName: "Mérida, Yucatán, México", population: 600000, context: "Península de Yucatán" },
-  { id: "mx-10", name: "Cancún", type: "city", fullName: "Cancún, Quintana Roo, México", population: 550000, context: "Destino turístico" },
+  { id: "mx-1", name: "Mexico City", type: "city", fullName: "Mexico City, Mexico", population: 9200000, context: "National capital" },
+  { id: "mx-2", name: "Guadalajara", type: "city", fullName: "Guadalajara, Jalisco, Mexico", population: 1500000, context: "Metropolitan area" },
+  { id: "mx-3", name: "Monterrey", type: "city", fullName: "Monterrey, Nuevo León, Mexico", population: 1100000, context: "Industrial center" },
+  { id: "mx-4", name: "Puebla", type: "city", fullName: "Puebla, Puebla, Mexico", population: 700000, context: "Historic center" },
+  { id: "mx-5", name: "Tijuana", type: "city", fullName: "Tijuana, Baja California, Mexico", population: 900000, context: "Northern border" },
+  { id: "mx-6", name: "León", type: "city", fullName: "León, Guanajuato, Mexico", population: 800000, context: "Footwear industry" },
+  { id: "mx-7", name: "Juárez", type: "city", fullName: "Ciudad Juárez, Chihuahua, Mexico", population: 750000, context: "US border" },
+  { id: "mx-8", name: "Zapopan", type: "city", fullName: "Zapopan, Jalisco, Mexico", population: 650000, context: "Metropolitan area GDL" },
+  { id: "mx-9", name: "Mérida", type: "city", fullName: "Mérida, Yucatán, Mexico", population: 600000, context: "Yucatan Peninsula" },
+  { id: "mx-10", name: "Cancún", type: "city", fullName: "Cancún, Quintana Roo, Mexico", population: 550000, context: "Tourist destination" },
 
   // States
-  { id: "mx-st-1", name: "Jalisco", type: "state", fullName: "Jalisco, México", context: "Estado occidental" },
-  { id: "mx-st-2", name: "Nuevo León", type: "state", fullName: "Nuevo León, México", context: "Estado noreste" },
-  { id: "mx-st-3", name: "Yucatán", type: "state", fullName: "Yucatán, México", context: "Península sureste" },
-  { id: "mx-st-4", name: "Quintana Roo", type: "state", fullName: "Quintana Roo, México", context: "Riviera Maya" },
+  { id: "mx-st-1", name: "Jalisco", type: "state", fullName: "Jalisco, Mexico", context: "Western state" },
+  { id: "mx-st-2", name: "Nuevo León", type: "state", fullName: "Nuevo León, Mexico", context: "Northeast state" },
+  { id: "mx-st-3", name: "Yucatán", type: "state", fullName: "Yucatán, Mexico", context: "Southeast peninsula" },
+  { id: "mx-st-4", name: "Quintana Roo", type: "state", fullName: "Quintana Roo, Mexico", context: "Riviera Maya" },
 
   // International
-  { id: "us-1", name: "Los Angeles", type: "city", fullName: "Los Angeles, California, USA", population: 4000000, context: "Costa oeste EE.UU." },
-  { id: "us-2", name: "Miami", type: "city", fullName: "Miami, Florida, USA", population: 470000, context: "Sudeste EE.UU." },
-  { id: "co-1", name: "Bogotá", type: "city", fullName: "Bogotá, Colombia", population: 7000000, context: "Capital colombiana" },
-  { id: "pe-1", name: "Lima", type: "city", fullName: "Lima, Perú", population: 9500000, context: "Capital peruana" },
-  { id: "cl-1", name: "Santiago", type: "city", fullName: "Santiago, Chile", population: 6000000, context: "Capital chilena" }
+  { id: "us-1", name: "Los Angeles", type: "city", fullName: "Los Angeles, California, USA", population: 4000000, context: "West coast USA" },
+  { id: "us-2", name: "Miami", type: "city", fullName: "Miami, Florida, USA", population: 470000, context: "Southeast USA" },
+  { id: "co-1", name: "Bogotá", type: "city", fullName: "Bogotá, Colombia", population: 7000000, context: "Colombian capital" },
+  { id: "pe-1", name: "Lima", type: "city", fullName: "Lima, Peru", population: 9500000, context: "Peruvian capital" },
+  { id: "cl-1", name: "Santiago", type: "city", fullName: "Santiago, Chile", population: 6000000, context: "Chilean capital" }
 ]
 
 export function LocationAutocomplete({
   value,
   onChange,
-  placeholder = "Buscar ubicación...",
+  placeholder = "Search location...",
   className,
   autoFocus
 }: LocationAutocompleteProps) {
@@ -145,12 +145,12 @@ export function LocationAutocomplete({
   const formatPopulation = (population?: number) => {
     if (!population) return ""
     if (population >= 1000000) {
-      return `${(population / 1000000).toFixed(1)}M hab.`
+      return `${(population / 1000000).toFixed(1)}M residents`
     }
     if (population >= 1000) {
-      return `${(population / 1000).toFixed(0)}K hab.`
+      return `${(population / 1000).toFixed(0)}K residents`
     }
-    return `${population} hab.`
+    return `${population} residents`
   }
 
   const getTypeColor = (type: LocationSuggestion['type']) => {
@@ -171,13 +171,13 @@ export function LocationAutocomplete({
   const getTypeLabel = (type: LocationSuggestion['type']) => {
     switch (type) {
       case "country":
-        return "País"
+        return "Country"
       case "state":
-        return "Estado"
+        return "State"
       case "city":
-        return "Ciudad"
+        return "City"
       case "region":
-        return "Región"
+        return "Region"
       default:
         return ""
     }
@@ -208,7 +208,7 @@ export function LocationAutocomplete({
                   <div className="p-3 bg-muted/30">
                     <p className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                       <MapPin className="h-3 w-3" />
-                      Ubicaciones populares
+                      Popular locations
                     </p>
                   </div>
                 )}
@@ -268,10 +268,10 @@ export function LocationAutocomplete({
               <div className="p-6 text-center">
                 <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  No se encontraron ubicaciones
+                  No locations found
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Intenta con otro término de búsqueda
+                  Try with another search term
                 </p>
               </div>
             )}

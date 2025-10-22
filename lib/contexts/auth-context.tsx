@@ -91,11 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true)
       const response = await authAPI.login({ email, password })
       setUser(response.user)
-      toast.success("Inicio de sesión exitoso")
+      toast.success("Login successful")
       router.push("/dashboard")
     } catch (error) {
       console.error("Login error:", error)
-      toast.error("Error al iniciar sesión. Verifica tus credenciales.")
+      toast.error("Login failed. Please check your credentials.")
       throw error
     } finally {
       setIsLoading(false)
@@ -118,11 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...(company && { company }),
       })
       setUser(response.user)
-      toast.success("Registro exitoso")
+      toast.success("Registration successful")
       router.push("/dashboard")
     } catch (error) {
       console.error("Register error:", error)
-      toast.error("Error al registrarse. Intenta con otro email.")
+      toast.error("Registration failed. Try with another email.")
       throw error
     } finally {
       setIsLoading(false)
@@ -133,11 +133,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authAPI.logout()
     setUser(null)
 
-    // Limpiar TODOS los stores persistidos para evitar data residual
+    // Clear all persisted stores to avoid residual data
     localStorage.removeItem('h2o-project-store')
     localStorage.removeItem('h2o-technical-data-store')
 
-    toast.success("Sesión cerrada")
+    toast.success("Session closed")
     router.push("/login")
   }
 

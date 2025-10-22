@@ -91,50 +91,50 @@ const processFile = async (file: File): Promise<ExtractedData> => {
     return {
       type: "laboratory",
       confidence: 0.92,
-      preview: "Análisis de laboratorio detectado - Aguas del Río San José",
+      preview: "Laboratory analysis detected - San José River Waters",
       metadata: {
         sampleDate: "2024-01-15",
         laboratory: "LACOMET",
-        samplePoint: "Captación Principal"
+        samplePoint: "Main Intake"
       },
       detectedFields: [
         {
-          parameter: "Turbiedad",
+          parameter: "Turbidity",
           value: 15.2,
           unit: "NTU",
           confidence: 0.95,
-          sourceLocation: "Hoja1, Celda B5",
+          sourceLocation: "Sheet1, Cell B5",
           suggestedMapping: "raw-water-parameters.turbidity"
         },
         {
           parameter: "pH",
           value: 7.1,
           confidence: 0.98,
-          sourceLocation: "Hoja1, Celda B8",
+          sourceLocation: "Sheet1, Cell B8",
           suggestedMapping: "raw-water-parameters.ph"
         },
         {
-          parameter: "Color Aparente",
+          parameter: "Apparent Color",
           value: 28,
           unit: "UPC",
           confidence: 0.87,
-          sourceLocation: "Hoja1, Celda B12",
+          sourceLocation: "Sheet1, Cell B12",
           suggestedMapping: "raw-water-parameters.color"
         },
         {
-          parameter: "Hierro Total",
+          parameter: "Total Iron",
           value: 0.85,
           unit: "mg/L",
           confidence: 0.91,
-          sourceLocation: "Hoja1, Celda B15",
+          sourceLocation: "Sheet1, Cell B15",
           suggestedMapping: "raw-water-parameters.iron"
         },
         {
-          parameter: "Dureza Total",
+          parameter: "Total Hardness",
           value: 185,
           unit: "mg/L CaCO₃",
           confidence: 0.89,
-          sourceLocation: "Hoja1, Celda B18",
+          sourceLocation: "Sheet1, Cell B18",
           suggestedMapping: "raw-water-parameters.hardness"
         }
       ]
@@ -143,26 +143,26 @@ const processFile = async (file: File): Promise<ExtractedData> => {
     return {
       type: "pdf",
       confidence: 0.78,
-      preview: "Documento técnico - Especificaciones del proyecto",
+      preview: "Technical document - Project specifications",
       metadata: {
         pages: 12,
         documentType: "technical_specification"
       },
       detectedFields: [
         {
-          parameter: "Caudal de Diseño",
+          parameter: "Design Flow",
           value: 45,
           unit: "L/s",
           confidence: 0.82,
-          sourceLocation: "Página 3, Párrafo 2",
+          sourceLocation: "Page 3, Paragraph 2",
           suggestedMapping: "general-data.design-flow"
         },
         {
-          parameter: "Población Servida",
+          parameter: "Population Served",
           value: 22000,
-          unit: "habitantes",
+          unit: "inhabitants",
           confidence: 0.76,
-          sourceLocation: "Página 1, Tabla 1",
+          sourceLocation: "Page 1, Table 1",
           suggestedMapping: "general-data.population-served"
         }
       ]
@@ -171,17 +171,17 @@ const processFile = async (file: File): Promise<ExtractedData> => {
     return {
       type: "image",
       confidence: 0.65,
-      preview: "Imagen procesada - Posibles datos técnicos detectados",
+      preview: "Image processed - Possible technical data detected",
       metadata: {
         dimensions: "1920x1080",
         format: file.type
       },
       detectedFields: [
         {
-          parameter: "Valor detectado",
+          parameter: "Detected Value",
           value: "25.5",
           confidence: 0.65,
-          sourceLocation: "Esquina superior derecha",
+          sourceLocation: "Top right corner",
           suggestedMapping: "unknown"
         }
       ]
@@ -213,14 +213,14 @@ function FileUploadZone({
         </div>
         <div className="space-y-2">
           <p className="text-lg font-medium">
-            {isDragActive ? "Suelta los archivos aquí" : "Arrastra archivos o haz clic"}
+            {isDragActive ? "Drop files here" : "Drag files or click"}
           </p>
           <p className="text-sm text-muted-foreground">
-            Soporta PDF, Excel, CSV e imágenes (máx. 10MB cada uno)
+            Supports PDF, Excel, CSV and images (max. 10MB each)
           </p>
         </div>
         <Button variant="outline">
-          Seleccionar Archivos
+          Select Files
         </Button>
       </div>
     </div>
@@ -294,10 +294,10 @@ function FilePreview({
               {getStatusIcon(file.status)}
             </div>
             <span className={cn("text-sm", getStatusColor(file.status))}>
-              {file.status === "uploading" && "Subiendo archivo..."}
-              {file.status === "analyzing" && "Analizando contenido..."}
-              {file.status === "ready" && "Listo para importar"}
-              {file.status === "error" && (file.error || "Error al procesar")}
+              {file.status === "uploading" && "Uploading file..."}
+              {file.status === "analyzing" && "Analyzing content..."}
+              {file.status === "ready" && "Ready to import"}
+              {file.status === "error" && (file.error || "Processing error")}
             </span>
           </div>
 
@@ -311,7 +311,7 @@ function FilePreview({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Badge variant="secondary" className="text-xs">
-                  {file.extractedData.detectedFields.length} campos detectados
+                  {file.extractedData.detectedFields.length} fields detected
                 </Badge>
                 <Badge
                   variant="outline"
@@ -321,7 +321,7 @@ function FilePreview({
                     file.extractedData.confidence > 0.6 ? "text-yellow-600" : "text-red-600"
                   )}
                 >
-                  {Math.round(file.extractedData.confidence * 100)}% confianza
+                  {Math.round(file.extractedData.confidence * 100)}% confidence
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -439,7 +439,7 @@ export function FileUploader({
       {files.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Archivos Subidos</h3>
+            <h3 className="text-lg font-medium">Uploaded Files</h3>
             <Badge variant="outline">
               {files.length} / {maxFiles}
             </Badge>
@@ -463,13 +463,13 @@ export function FileUploader({
           <CheckCircle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             <span>
-              {readyFiles.length} archivo(s) listo(s) para importar datos
+              {readyFiles.length} file(s) ready to import data
             </span>
             <Button
               size="sm"
               onClick={() => onDataExtracted(extractedDataArray)}
             >
-              Importar Datos
+              Import Data
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </AlertDescription>

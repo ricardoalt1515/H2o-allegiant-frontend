@@ -2,8 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  turbopack: {},
-  outputFileTracingRoot: '/Users/ricardoaltamirano/Developer/frontend/h2oallegiant'
+  turbopack: {}
 };
 
 export default nextConfig;

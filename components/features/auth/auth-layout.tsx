@@ -60,10 +60,11 @@ export function AuthLayout({
   ]
 
   return (
-    <div className="min-h-screen w-full flex">
+    <div className="min-h-screen w-full flex" suppressHydrationWarning>
       {/* Left Panel - Premium Brand Experience (Desktop only) */}
       {showBrandPanel && (
         <motion.div
+          suppressHydrationWarning
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
@@ -139,6 +140,7 @@ export function AuthLayout({
         />
 
         <motion.div
+          suppressHydrationWarning
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: showBrandPanel ? 0.3 : 0, duration: 0.4 }}

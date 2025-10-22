@@ -191,14 +191,14 @@ export function ProposalGenerationLoader() {
         <div className="space-y-2">
           <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">Generating conceptual proposal</h3>
           <p className="text-sm text-muted-foreground">
-            Analizando parámetros técnicos y calculando soluciones óptimas...
+            Analyzing technical parameters and calculating optimal solutions...
           </p>
         </div>
 
         <div className="w-full max-w-md mx-auto space-y-3">
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Progreso</span>
-            <span>~2-3 minutos</span>
+            <span>Progress</span>
+            <span>~2-3 minutes</span>
           </div>
           <div className="h-2 bg-muted/30 backdrop-blur-sm rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000" style={{width: "45%"}} />
@@ -208,15 +208,15 @@ export function ProposalGenerationLoader() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-muted-foreground">Parámetros validados</span>
+            <span className="text-muted-foreground">Parameters validated</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-muted-foreground">Calculando tratamiento</span>
+            <span className="text-muted-foreground">Calculating treatment</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-muted rounded-full" />
-            <span className="text-muted-foreground">Generando reporte</span>
+            <span className="text-muted-foreground">Generating report</span>
           </div>
         </div>
       </CardContent>
@@ -232,7 +232,7 @@ interface SuccessIndicatorProps {
 }
 
 export function SuccessIndicator({
-  message = "Guardado exitosamente",
+  message = "Saved successfully",
   show = false,
   onComplete
 }: SuccessIndicatorProps) {
@@ -262,26 +262,26 @@ export function TechnicalDataLoader({
   const stageData = {
     analyzing: {
       icon: Beaker,
-      title: "Analizando Parámetros",
-      description: "Validando calidad del agua y cargas contaminantes...",
+      title: "Analyzing Parameters",
+      description: "Validating water quality and contaminant loads...",
       color: "text-blue-600"
     },
     calculating: {
       icon: Calculator,
-      title: "Calculando Dimensiones",
-      description: "Determinando volúmenes de reactores y equipos...",
+      title: "Calculating Dimensions",
+      description: "Determining reactor volumes and equipment...",
       color: "text-green-600"
     },
     generating: {
       icon: Cog,
-      title: "Generando Configuración",
-      description: "Optimizando proceso de tratamiento...",
+      title: "Generating Configuration",
+      description: "Optimizing treatment process...",
       color: "text-purple-600"
     },
     finalizing: {
       icon: Zap,
-      title: "Finalizando Propuesta",
-      description: "Preparando documentación técnica...",
+      title: "Finalizing Proposal",
+      description: "Preparing technical documentation...",
       color: "text-amber-600"
     }
   }

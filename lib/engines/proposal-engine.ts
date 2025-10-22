@@ -97,11 +97,11 @@ const TECHNOLOGY_CATALOG: Record<ProjectSector, TechnologyOption[]> = {
       energy: "medium"
     },
     {
-      name: "Lagunas Facultativas",
+      name: "Facultative Ponds",
       type: "primary",
-      description: "Sistema natural de lagunas en serie",
-      pros: ["Bajo costo operativo", "Mínimo mantenimiento", "Robusto"],
-      cons: ["Gran requerimiento de área", "Sensible al clima", "Menor eficiencia"],
+      description: "Natural system of ponds in series",
+      pros: ["Low operational cost", "Minimal maintenance", "Robust"],
+      cons: ["Large area requirement", "Climate sensitive", "Lower efficiency"],
       efficiency: 80,
       complexity: "low",
       footprint: "large",
@@ -110,22 +110,22 @@ const TECHNOLOGY_CATALOG: Record<ProjectSector, TechnologyOption[]> = {
   ],
   Industrial: [
     {
-      name: "Físico-Químico + Biológico",
+      name: "Physicochemical + Biological",
       type: "primary",
       description: "Coagulation-flocculation followed by biological treatment",
       pros: ["Treats wide range of contaminants", "Flexible", "High efficiency"],
-      cons: ["Alto costo químicos", "Produce lodos químicos", "Operación compleja"],
+      cons: ["High chemical costs", "Produces chemical sludge", "Complex operation"],
       efficiency: 92,
       complexity: "high",
       footprint: "medium",
       energy: "high"
     },
     {
-      name: "Reactor SBR",
+      name: "SBR Reactor",
       type: "primary",
-      description: "Reactor secuencial discontinuo",
-      pros: ["Flexible operacionalmente", "Buena remoción nutrientes", "Compacto"],
-      cons: ["Requiere automatización", "Operación compleja", "Inversión inicial alta"],
+      description: "Sequential batch reactor",
+      pros: ["Operationally flexible", "Good nutrient removal", "Compact"],
+      cons: ["Requires automation", "Complex operation", "High initial investment"],
       efficiency: 88,
       complexity: "high",
       footprint: "small",
@@ -134,22 +134,22 @@ const TECHNOLOGY_CATALOG: Record<ProjectSector, TechnologyOption[]> = {
   ],
   Residential: [
     {
-      name: "Reactor MBR",
+      name: "MBR Reactor",
       type: "primary",
-      description: "Reactor biológico con membrana sumergida",
-      pros: ["Excelente calidad efluente", "Compacto", "Apto para reuso"],
-      cons: ["Alto costo membranas", "Ensuciamiento", "Consumo energético"],
+      description: "Biological reactor with submerged membrane",
+      pros: ["Excellent effluent quality", "Compact", "Suitable for reuse"],
+      cons: ["High membrane cost", "Fouling issues", "High energy consumption"],
       efficiency: 98,
       complexity: "high",
       footprint: "small",
       energy: "high"
     },
     {
-      name: "Tanque Imhoff + Filtro",
+      name: "Imhoff Tank + Filter",
       type: "primary",
-      description: "Sedimentación y digestión seguida de filtración",
-      pros: ["Simple operación", "Bajo costo", "Mínima electricidad"],
-      cons: ["Eficiencia limitada", "Requiere área", "Olores potenciales"],
+      description: "Sedimentation and digestion followed by filtration",
+      pros: ["Simple operation", "Low cost", "Minimal electricity"],
+      cons: ["Limited efficiency", "Requires area", "Potential odors"],
       efficiency: 75,
       complexity: "low",
       footprint: "medium",
@@ -158,11 +158,11 @@ const TECHNOLOGY_CATALOG: Record<ProjectSector, TechnologyOption[]> = {
   ],
   Commercial: [
     {
-      name: "Lodos Activados Compacto",
+      name: "Compact Activated Sludge",
       type: "primary",
-      description: "Sistema aerobio de alta carga en configuración compacta",
-      pros: ["Eficiencia alta", "Relativamente compacto", "Operación estable"],
-      cons: ["Consumo energético", "Requiere mantenimiento", "Produce lodos"],
+      description: "High-load aerobic system in compact configuration",
+      pros: ["High efficiency", "Relatively compact", "Stable operation"],
+      cons: ["High energy consumption", "Requires maintenance", "Produces sludge"],
       efficiency: 90,
       complexity: "medium",
       footprint: "small",
@@ -265,30 +265,30 @@ export class IntelligentProposalGenerator {
 
     if (this.sector === "Municipal") {
       if (population && population > 50000) {
-        primaryTech = availableTech.find(t => t.name.includes("Lodos Activados"))!
-        reasoning.push("Población > 50,000 hab: recomendado lodos activados por eficiencia y confiabilidad")
+        primaryTech = availableTech.find(t => t.name.includes("Activated"))!
+        reasoning.push("Population > 50,000 inhabitants: activated sludge recommended for efficiency and reliability")
       } else if (flow < 500) {
-        primaryTech = availableTech.find(t => t.name.includes("Lagunas"))!
-        reasoning.push("Caudal bajo: lagunas facultativas por bajo costo operativo")
+        primaryTech = availableTech.find(t => t.name.includes("Pond"))!
+        reasoning.push("Low flow: facultative ponds for low operational cost")
       } else {
         primaryTech = availableTech.find(t => t.name.includes("UASB"))!
-        reasoning.push("Caudal medio: UASB + aerobio por eficiencia energética")
+        reasoning.push("Medium flow: UASB + aerobic for energy efficiency")
       }
     } else if (this.sector === "Industrial") {
       if (dbo > 800) {
-        primaryTech = availableTech.find(t => t.name.includes("Físico-Químico"))!
+        primaryTech = availableTech.find(t => t.name.includes("Physicochemical"))!
         reasoning.push("High BOD: physicochemical pretreatment necessary")
       } else {
         primaryTech = availableTech.find(t => t.name.includes("SBR"))!
-        reasoning.push("DBO moderado: SBR por flexibilidad operacional")
+        reasoning.push("Moderate BOD: SBR for operational flexibility")
       }
     } else if (this.sector === "Residential") {
       if (flow < 100) {
-        primaryTech = availableTech.find(t => t.name.includes("Tanque Imhoff"))!
-        reasoning.push("Caudal bajo residencial: Tanque Imhoff por simplicidad")
+        primaryTech = availableTech.find(t => t.name.includes("Imhoff"))!
+        reasoning.push("Low residential flow: Imhoff Tank for simplicity")
       } else {
         primaryTech = availableTech.find(t => t.name.includes("MBR"))!
-        reasoning.push("Requerimiento alta calidad: MBR para posible reuso")
+        reasoning.push("High quality requirement: MBR for potential reuse")
       }
     } else {
       primaryTech = availableTech[0]!
@@ -315,33 +315,33 @@ export class IntelligentProposalGenerator {
     }
     timeline.total = timeline.design + timeline.construction + timeline.commissioning
 
-    reasoning.push(`Timeline estimado: ${timeline.total} meses total`)
+    reasoning.push(`Estimated timeline: ${timeline.total} months total`)
 
     // Generate assumptions
     const assumptions = [
-      "Análisis de laboratorio representativos del agua residual",
-      "Disponibilidad de servicios básicos en sitio (electricidad, agua)",
-      "Permisos ambientales gestionados por el cliente",
-      `Operación 24 horas, factor de carga: 0.8`,
-      "Costos en USD, año base 2024",
-      "No incluye costo del terreno"
+      "Representative laboratory analysis of wastewater",
+      "Availability of basic services on site (electricity, water)",
+      "Environmental permits managed by client",
+      `24-hour operation, load factor: 0.8`,
+      "Costs in USD, base year 2024",
+      "Does not include land cost"
     ]
 
     // Generate risks
     const risks = [
       {
         category: "technical" as const,
-        risk: "Variabilidad en calidad del agua residual",
+        risk: "Variability in wastewater quality",
         probability: "medium" as const,
         impact: "medium" as const,
-        mitigation: "Tanque de ecualización y monitoreo continuo"
+        mitigation: "Equalization tank and continuous monitoring"
       },
       {
         category: "financial" as const,
-        risk: "Incremento en costos de construcción",
+        risk: "Increase in construction costs",
         probability: "medium" as const,
         impact: "high" as const,
-        mitigation: "Contingencia del 15% incluida en presupuesto"
+        mitigation: "15% contingency included in budget"
       }
     ]
 
@@ -383,11 +383,11 @@ export class IntelligentProposalGenerator {
 
   private generateFlowDiagram(technology: TechnologyOption[]): string {
     const steps = [
-      "Agua Residual Cruda",
+      "Raw Wastewater",
       "Pretreatment (screens, grit chamber)",
       ...technology.map(t => t.name),
-      "Desinfección",
-      "Efluente Tratado"
+      "Disinfection",
+      "Treated Effluent"
     ]
 
     return steps.join(" → ")
@@ -411,8 +411,8 @@ export class IntelligentProposalGenerator {
       },
       {
         id: "calculations",
-        title: "Ejecutando cálculos deterministas",
-        description: "Dimensionamiento hidráulico y estimación de costos",
+        title: "Executing deterministic calculations",
+        description: "Hydraulic sizing and cost estimation",
         duration: 2500,
         status: "pending"
       },
@@ -425,8 +425,8 @@ export class IntelligentProposalGenerator {
       },
       {
         id: "documentation",
-        title: "Generando documentación",
-        description: "Preparando memoria técnica y especificaciones",
+        title: "Generating documentation",
+        description: "Preparing technical report and specifications",
         duration: 1500,
         status: "pending"
       }
