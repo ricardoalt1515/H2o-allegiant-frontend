@@ -1,0 +1,87 @@
+"use client"
+
+import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import type { TableField, TableSection } from "@/lib/types/technical-data"
+import { DynamicSection } from "./dynamic-section"
+
+interface SectionAccordionItemProps {
+  section: TableSection
+  isFixed?: boolean
+  onFieldChange: (sectionId: string, fieldId: string, value: any, unit?: string, notes?: string) => void
+  onAddField?: (sectionId: string, field: Omit<TableField, "id">) => void
+  onRemoveField?: (sectionId: string, fieldId: string) => void
+  onRemoveSection?: (sectionId: string) => void
+}
+
+/**
+ * ✅ OPTIMIZACIÓN: Componente reutilizable para items de accordion
+ * Elimina ~100 líneas de código duplicado
+ */
+export function SectionAccordionItem({
+  section,
+  isFixed = false,
+  onFieldChange,
+  onAddField,
+  onRemoveField,
+  onRemoveSection,
+}: SectionAccordionItemProps) {
+  const completedFields = section.fields.filter(f => f.value && f.value !== "").length
+  const totalFields = section.fields.length
+  const isEmpty = totalFields === 0
+
+  return (
+    <AccordionItem
+      key={section.id}
+      value={section.id}
+      className={cn(
+        "border rounded-lg px-0",
+        isFixed && "bg-muted/20"
+      )}
+      id={`section-${section.id}`}
+    >
+      <AccordionTrigger className="px-6 py-4 hover:no-underline">
+        <div className="flex items-center justify-between w-full mr-4">
+          <div className="text-left">
+            <h3 className="font-serif font-semibold">{section.title}</h3>
+            {section.description && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {section.description}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {completedFields} / {totalFields}
+            </Badge>
+            {isEmpty && (
+              <Badge variant="outline" className="text-xs">
+                Vacía
+              </Badge>
+            )}
+            {isFixed && (
+              <Badge variant="outline" className="text-xs">
+                Permanente
+              </Badge>
+            )}
+          </div>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="px-0 pb-0">
+        <div className="border-t px-6 py-4">
+          <DynamicSection
+            section={section}
+            onFieldChange={onFieldChange}
+            onAddField={onAddField ?? ((_, __) => {})}
+            onRemoveField={onRemoveField ?? ((_, __) => {})}
+            {...(onRemoveSection && !isFixed ? { onRemoveSection } : {})}
+            isCollapsible={false}
+            showAddField={!!onAddField}
+            showRemoveSection={!!onRemoveSection && !isFixed}
+          />
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  )
+}

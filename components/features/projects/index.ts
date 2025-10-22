@@ -1,0 +1,11 @@
+// Projects feature exports
+export { ProjectTabs } from './project-tabs'
+export { TechnicalDataSheet } from './technical-data-sheet'
+export { FilesTabEnhanced } from './files-tab-enhanced'
+export { EnhancedFileUploader } from './enhanced-file-uploader'
+export { ProjectOverview } from './project-overview'
+export { ProjectHeader } from './project-header'
+export { ProposalsTab } from './proposals-tab'
+export { ProjectProgressIndicator } from './project-progress-indicator'
+export { SmartImportPreview } from './smart-import-preview'
+export { IntelligentProposalGeneratorComponent, IntelligentProposalGeneratorComponent as IntelligentProposalGenerator } from './intelligent-proposal-generator'
