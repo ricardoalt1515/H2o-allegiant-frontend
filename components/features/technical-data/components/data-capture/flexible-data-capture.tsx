@@ -178,8 +178,7 @@ export function FlexibleDataCapture({
     const parametersBySection: Record<string, TableField[]> = {}
 
     parameters.forEach(param => {
-      // ✅ NUEVO: Usa metadata explícita (targetSection)
-      // @ts-ignore - targetSection viene de ParameterTemplate
+      // ✅ Usa metadata explícita (targetSection)
       const targetSection = param.targetSection || "custom-section"
 
       if (!parametersBySection[targetSection]) {
@@ -187,7 +186,7 @@ export function FlexibleDataCapture({
       }
       
       // Remover campos metadata-only antes de agregar
-      const { targetSection: _, ...cleanParam } = param as any
+      const { targetSection: _, ...cleanParam } = param
       parametersBySection[targetSection]!.push({
         ...cleanParam,
         source: "manual" // Override source to manual when added from library

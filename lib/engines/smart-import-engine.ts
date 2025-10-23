@@ -41,18 +41,18 @@ export interface ImportPreview {
 
 // Engineering-aware field patterns
 const FIELD_PATTERNS = {
-  // Flow parameters
+  // Flow parameters (optional - for specific templates)
   caudal: {
     patterns: [/caud[ai]l/i, /flow/i, /q[\s_]*d/i, /gasto/i],
     targetField: "design-flow",
-    section: "general-data",
+    section: "general-data", // Not in base template, used by specific templates
     units: ["L/s", "m³/d", "L/min", "m³/h"],
     confidence: 90
   },
   poblacion: {
     patterns: [/poblac/i, /population/i, /habitantes/i, /hab/i, /people/i],
     targetField: "population-served",
-    section: "general-data",
+    section: "general-data", // Not in base template, used by Municipal templates
     units: ["hab", "personas"],
     confidence: 85
   },
@@ -61,51 +61,51 @@ const FIELD_PATTERNS = {
   ph: {
     patterns: [/ph/i, /potencial.*hidrogeno/i],
     targetField: "ph",
-    section: "raw-water-parameters",
+    section: "water-quality",
     units: [""],
     confidence: 95
   },
   turbidez: {
     patterns: [/turbid/i, /turbiedad/i, /ntu/i],
     targetField: "turbidity",
-    section: "raw-water-parameters",
+    section: "water-quality",
     units: ["NTU", "mg/L"],
     confidence: 90
   },
   dbo: {
     patterns: [/dbo\s*5?/i, /bod\s*5?/i, /demanda.*oxigeno/i],
-    targetField: "dbo5",
-    section: "raw-water-parameters",
+    targetField: "bod5",
+    section: "water-quality",
     units: ["mg/L"],
     confidence: 90
   },
   dqo: {
     patterns: [/dqo/i, /cod/i, /demanda.*quimica/i],
-    targetField: "dqo",
-    section: "raw-water-parameters",
+    targetField: "cod",
+    section: "water-quality",
     units: ["mg/L"],
     confidence: 90
   },
   sst: {
     patterns: [/sst/i, /tss/i, /solidos.*suspendidos/i, /suspended.*solids/i],
-    targetField: "sst",
-    section: "raw-water-parameters",
+    targetField: "tss",
+    section: "water-quality",
     units: ["mg/L"],
     confidence: 85
   },
   temperatura: {
     patterns: [/temp/i, /temperatura/i, /temperature/i],
     targetField: "temperature",
-    section: "raw-water-parameters",
+    section: "water-quality",
     units: ["°C", "°F"],
     confidence: 80
   },
 
-  // Treatment objectives
+  // Treatment objectives (can be added to any section dynamically)
   eficiencia: {
     patterns: [/eficienc/i, /removal/i, /remocion/i, /%/],
     targetField: "target-efficiency",
-    section: "treatment-objectives",
+    section: "water-quality", // Can be added dynamically
     units: ["%"],
     confidence: 75
   }

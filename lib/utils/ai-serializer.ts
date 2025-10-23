@@ -104,8 +104,16 @@ function fieldToAIParameter(field: TableField, sectionId: string): AIParameter {
  * Infiere categoría del parámetro basado en el campo y sección
  */
 function inferCategory(field: TableField, sectionId: string): string {
-  // Categorías por sección
+  // Categorías por sección (actualizado para nueva estructura)
   const sectionCategories: Record<string, string> = {
+    // Nueva estructura (5 secciones)
+    "project-context": "context",
+    "economics-scale": "economics",
+    "project-constraints": "constraints",
+    "water-quality": "quality",
+    "field-notes": "notes",
+
+    // Legacy sections (para compatibilidad con plantillas específicas)
     "general-data": "design",
     "raw-water-parameters": "quality",
     "treatment-objectives": "regulatory",
@@ -264,24 +272,28 @@ export function extractKeyParameters(sections: TableSection[]): Record<string, a
   }
 
   // Parámetros clave para el agente
-  const designFlow = findField("design-flow", "general-data")
+  // design-flow: optional field in general-data (only in specific templates)
+  const designFlow = findField("design-flow", "general-data") || findField("design-flow")
   if (designFlow) {
     keyParams.designFlow = designFlow.value
     keyParams.designFlowUnit = designFlow.unit
   }
 
-  const population = findField("population-served", "general-data")
+  // population-served: optional field (Municipal templates add to economics-scale)
+  const population = findField("population-served", "economics-scale") || findField("population-served", "general-data") || findField("population-served")
   if (population) {
     keyParams.population = population.value
   }
 
-  const bod = findField("bod5", "raw-water-parameters") || findField("dbo5")
+  // BOD: water-quality section (new structure) or fallback to any section
+  const bod = findField("bod5", "water-quality") || findField("bod5") || findField("dbo5")
   if (bod) {
     keyParams.bod = bod.value
     keyParams.bodUnit = bod.unit
   }
 
-  const cod = findField("cod", "raw-water-parameters") || findField("dqo")
+  // COD: water-quality section (new structure) or fallback to any section
+  const cod = findField("cod", "water-quality") || findField("cod") || findField("dqo")
   if (cod) {
     keyParams.cod = cod.value
     keyParams.codUnit = cod.unit

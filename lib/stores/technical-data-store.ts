@@ -4,6 +4,7 @@ import { immer } from "zustand/middleware/immer"
 import { useEffect, useState, useMemo } from 'react'
 
 import type { TableSection, TableField } from "@/lib/types/technical-data"
+import { logger } from "@/lib/utils/logger"
 import {
   saveTechnicalSheetData,
   applyFieldUpdates as applyFieldUpdatesHelper,
@@ -240,14 +241,27 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
           let sections = (projectData.technical_sections as TableSection[]) || []
 
           if (sections.length === 0) {
-            // No data exists - use base template
-            sections = createInitialTechnicalSheetData()
+            // No data exists - create from template based on project sector/subsector
+            
+            // Get project info to determine template
+            const projectStore = useProjectStore.getState()
+            const project = projectStore.projects.find(p => p.id === projectId)
+            
+            const sector = project?.sector
+            const subsector = project?.subsector
+            
+            if (sector || subsector) {
+              logger.info(`Creating technical sheet with template for ${sector}/${subsector}`, 'TechnicalDataStore')
+            }
+            
+            // Create sections with appropriate template
+            sections = createInitialTechnicalSheetData(sector, subsector)
 
             // Save initial template to backend
             try {
               await saveTechnicalSheetData(projectId, sections)
             } catch (saveError) {
-              console.warn('Failed to save initial template:', saveError)
+              logger.warn('Failed to save initial template', 'TechnicalDataStore')
             }
           } else {
             // Data exists - rehydrate with parameter library metadata
@@ -261,7 +275,7 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
             state.loading = false
           })
         } catch (error) {
-          console.error('Failed to load technical data:', error)
+          logger.error('Failed to load technical data', error, 'TechnicalDataStore')
 
           // Fallback: use base template
           const sections = createInitialTechnicalSheetData()
@@ -297,7 +311,7 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
         try {
           await saveTechnicalSheetData(projectId, updated)
         } catch (error) {
-          console.error('❌ Failed to save field update:', error)
+          logger.error('Failed to save field update', error, 'TechnicalDataStore')
 
           // ROLLBACK: Revertir al estado anterior
           set((state) => {
@@ -346,7 +360,7 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
           // Sincronizar con backend JSONB
           await saveTechnicalSheetData(projectId, updated)
         } catch (error) {
-          console.error('❌ Failed to sync batch update:', error)
+          logger.error('Failed to sync batch update', error, 'TechnicalDataStore')
 
           // ROLLBACK: Revertir al estado anterior
           set((state) => {
@@ -377,7 +391,7 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
         try {
           await saveTechnicalSheetData(projectId, next)
         } catch (e) {
-          console.warn('⚠️ Failed to persist template:', e)
+          logger.warn('Failed to persist template', 'TechnicalDataStore')
         }
 
         get().saveSnapshot(projectId, {
@@ -601,8 +615,11 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
       },
 
       resetToInitial: async (projectId) => {
-        // Reset to empty sections - let backend provide template if needed
-        const sections = createInitialTechnicalSheetData()
+        // Reset to initial template based on project sector/subsector
+        const projectStore = useProjectStore.getState()
+        const project = projectStore.projects.find(p => p.id === projectId)
+        
+        const sections = createInitialTechnicalSheetData(project?.sector, project?.subsector)
         set((state) => {
           state.technicalData[projectId] = sections
         })

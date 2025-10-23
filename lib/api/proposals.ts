@@ -9,6 +9,7 @@
  */
 
 import { apiClient } from './client'
+import { logger } from '@/lib/utils/logger'
 
 // ============================================================================
 // Types & Schemas
@@ -223,7 +224,11 @@ export class ProposalsAPI {
     regenerate = false
   ): Promise<Blob> {
     // ✅ Build URL correctly - apiBaseUrl already includes /api/v1
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'
+    // Fail fast if not configured in production
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    if (!apiBaseUrl) {
+      throw new Error('NEXT_PUBLIC_API_BASE_URL is not configured')
+    }
     // Don't start with / since baseURL already has the full path
     const endpoint = `ai/proposals/${projectId}/proposals/${proposalId}/pdf`
     const fullUrl = `${apiBaseUrl}/${endpoint}`
@@ -233,19 +238,33 @@ export class ProposalsAPI {
       url.searchParams.set('regenerate', 'true')
     }
 
-    console.log('🔍 PDF Download URL:', url.toString())
-    console.log('🔍 API Base URL:', apiBaseUrl)
-    console.log('🔍 Endpoint:', endpoint)
+    logger.debug('PDF Download Request', {
+      url: url.toString(),
+      apiBaseUrl,
+      endpoint
+    })
+
+    // ✅ SSR-safe token retrieval
+    const token = typeof window !== 'undefined' 
+      ? localStorage.getItem('access_token')
+      : null
+
+    if (!token) {
+      throw new Error('Authentication required. Please log in.')
+    }
 
     const response = await fetch(url.toString(), {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        Authorization: `Bearer ${token}`,
       },
       // Follow redirects (backend returns 302 to presigned URL)
       redirect: 'follow',
     })
 
-    console.log('📡 Response status:', response.status, response.statusText)
+    logger.debug('PDF Download Response', {
+      status: response.status,
+      statusText: response.statusText
+    })
 
     if (!response.ok) {
       throw new Error(`Failed to download PDF: ${response.statusText}`)
@@ -319,6 +338,12 @@ export interface PollingOptions {
   maxDurationMs?: number
 
   /**
+   * AbortSignal to cancel polling
+   * Allows external cancellation of long-running operations
+   */
+  signal?: AbortSignal
+
+  /**
    * Callback for each status update
    */
   onProgress?: (status: ProposalJobStatus) => void
@@ -356,31 +381,38 @@ export async function pollProposalStatus(
   const {
     intervalMs = 2500,
     maxDurationMs = 600000, // 10 minutes (AI generation can take 5-7 min)
+    signal,
     onProgress,
     onComplete,
     onError,
   } = options
 
-  console.log('🔄 [Polling] Starting poll for job:', jobId)
+  logger.info('Starting proposal generation polling', { jobId })
 
   const startTime = Date.now()
   let currentInterval = intervalMs
 
   while (true) {
     try {
+      // ✅ Check if cancelled via AbortSignal
+      if (signal?.aborted) {
+        logger.info('Polling cancelled by user', { jobId })
+        throw new Error('Polling cancelled by user')
+      }
+
       // Check if we've exceeded max duration
       if (Date.now() - startTime > maxDurationMs) {
         const elapsedMinutes = Math.round((Date.now() - startTime) / 60000)
         const timeoutError = `Proposal generation timed out after ${elapsedMinutes} minutes`
-        console.error('⏱️ [Polling] Timeout:', timeoutError)
+        logger.error('Polling timeout', { jobId, elapsedMinutes })
         onError?.(timeoutError)
         throw new Error(timeoutError)
       }
 
       // Poll for status
-      console.log('📡 [Polling] Fetching status for job:', jobId)
+      logger.debug('Polling proposal status', { jobId })
       const status = await ProposalsAPI.getJobStatus(jobId)
-      console.log('✅ [Polling] Status received:', status)
+      logger.debug('Proposal status received', { jobId, status: status.status, progress: status.progress })
 
       // Notify progress
       onProgress?.(status)

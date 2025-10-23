@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { authAPI, type User, apiClient } from "@/lib/api"
 import { toast } from "sonner"
+import { logger } from "@/lib/utils/logger"
 
 interface AuthContextType {
   user: User | null
@@ -29,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // ✅ FIX: Set up global 401 handler ONCE (not dependent on router)
     apiClient.setUnauthorizedHandler(() => {
-      console.warn('🚨 Global 401 handler: Clearing session')
+      logger.warn('Global 401 handler: Clearing session', 'AuthContext')
       authAPI.logout()
       setUser(null)
       localStorage.removeItem('h2o-project-store')
@@ -55,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             authAPI.logout()
           }
         } catch (error) {
-          console.error("Auth initialization error:", error)
+          logger.error('Auth initialization error', error, 'AuthContext')
           authAPI.logout()
         }
       }
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.success("Login successful")
       router.push("/dashboard")
     } catch (error) {
-      console.error("Login error:", error)
+      logger.error('Login error', error, 'AuthContext')
       toast.error("Login failed. Please check your credentials.")
       throw error
     } finally {

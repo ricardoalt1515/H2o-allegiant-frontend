@@ -56,28 +56,28 @@ type HighlightField = {
 
 const HIGHLIGHT_FIELDS: HighlightField[] = [
   {
-    sectionId: "general-data",
-    fieldId: "design-flow",
-    label: "Design flow",
+    sectionId: "water-quality",
+    fieldId: "ph",
+    label: "pH",
     icon: Sparkles,
   },
   {
-    sectionId: "general-data",
-    fieldId: "population-served",
-    label: "Population served",
+    sectionId: "water-quality",
+    fieldId: "turbidity",
+    label: "Turbidity",
+    icon: AlertCircle,
+  },
+  {
+    sectionId: "economics-scale",
+    fieldId: "water-consumption",
+    label: "Water consumption",
     icon: ClipboardList,
   },
   {
-    sectionId: "general-data",
-    fieldId: "treatment-type",
-    label: "Technology",
+    sectionId: "project-context",
+    fieldId: "water-source",
+    label: "Water source",
     icon: Brain,
-  },
-  {
-    sectionId: "treatment-objectives",
-    fieldId: "target-turbidity",
-    label: "Target turbidity",
-    icon: AlertCircle,
   },
 ]
 
@@ -130,7 +130,7 @@ export function TechnicalDataSummary({ sections, className, onFocusSection, onFo
   const sectionStats = useMemo(
     () =>
       sections
-        .filter((section) => section.fields.length > 0 && section.id !== "engineer-notes")
+        .filter((section) => section.fields.length > 0 && section.id !== "field-notes")
         .map((section) => ({
           section,
           stats: sectionCompletion(section),
@@ -144,7 +144,7 @@ export function TechnicalDataSummary({ sections, className, onFocusSection, onFo
   const summaryRows = useMemo(() => mapSectionsToSummaryRows(sections), [sections])
 
   const engineerNotes = useMemo(() => {
-    const field = findField(sections, "engineer-notes", "field-notes")
+    const field = findField(sections, "field-notes", "field-notes")
     return (field?.value as string | undefined)?.trim() ?? ""
   }, [sections])
 
@@ -180,7 +180,7 @@ export function TechnicalDataSummary({ sections, className, onFocusSection, onFo
     [onFocusField, onFocusSection],
   )
 
-  const tableRows = summaryRows.filter((row) => row.sectionId !== "engineer-notes")
+  const tableRows = summaryRows.filter((row) => row.sectionId !== "field-notes")
   const totalsBySection = new Map<string, { total: number; index: number }>()
   tableRows.forEach((row, index) => {
     const entry = totalsBySection.get(row.sectionId)
@@ -237,10 +237,10 @@ export function TechnicalDataSummary({ sections, className, onFocusSection, onFo
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => triggerFocusSection("general-data")} className="gap-2">
+                <DropdownMenuItem onSelect={() => triggerFocusSection("project-context")} className="gap-2">
                   <FileText className="h-4 w-4" /> Export CSV
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => triggerFocusSection("general-data")} className="gap-2">
+                <DropdownMenuItem onSelect={() => triggerFocusSection("project-context")} className="gap-2">
                   <Copy className="h-4 w-4" /> Copy AI Payload
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -425,7 +425,7 @@ export function TechnicalDataSummary({ sections, className, onFocusSection, onFo
           <button
             type="button"
             className="min-h-[160px] w-full rounded-2xl border border-transparent bg-muted/30 p-4 text-left text-sm text-muted-foreground transition hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
-            onClick={() => triggerFocusSection("engineer-notes")}
+            onClick={() => triggerFocusSection("field-notes")}
           >
             {engineerNotes ? (
               <p className="whitespace-pre-wrap text-foreground">{engineerNotes}</p>

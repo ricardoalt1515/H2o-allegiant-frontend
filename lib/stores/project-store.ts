@@ -11,6 +11,7 @@ import {
 } from "@/lib/project-types"
 import { projectsAPI } from "../api/projects"
 import { PROJECT_STATUS_GROUPS } from "../project-status"
+import { logger } from "@/lib/utils/logger"
 
 const mapProjectSummary = (project: ProjectSummary | ProjectDetail): ProjectSummary => {
   const summary = project as ProjectSummary
@@ -27,10 +28,10 @@ const mapProjectSummary = (project: ProjectSummary | ProjectDetail): ProjectSumm
     progress: typeof project.progress === 'number' ? project.progress : 0,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
-    type: project.type ?? 'Por definir',
+    type: project.type ?? 'To be defined',
     description: project.description ?? '',
     budget: typeof project.budget === 'number' ? project.budget : 0,
-    scheduleSummary: project.scheduleSummary ?? 'Por definir',
+    scheduleSummary: project.scheduleSummary ?? 'To be defined',
     proposalsCount:
       typeof summary.proposalsCount === 'number'
         ? summary.proposalsCount
@@ -170,7 +171,7 @@ export const useProjectStore = create<ProjectState>()(
           // Usuario sin proyectos = array vacío (correcto)
           set({ projects: items, loading: false, dataSource: 'api' })
         } catch (error) {
-          console.error('[ProjectStore] Failed to load projects', error)
+          logger.error('Failed to load projects', error, 'ProjectStore')
           set({
             projects: [],
             loading: false,
@@ -200,7 +201,7 @@ export const useProjectStore = create<ProjectState>()(
             state.dataSource = 'api'
           })
         } catch (error) {
-          console.error(`[ProjectStore] Failed to load project ${id}`, error)
+          logger.error('Failed to load project', error, 'ProjectStore')
           set(state => {
             state.currentProject = null
             state.loading = false
@@ -246,7 +247,7 @@ export const useProjectStore = create<ProjectState>()(
 
           return summary
         } catch (error) {
-          console.error('[ProjectStore] Failed to create project', error)
+          logger.error('Failed to create project', error, 'ProjectStore')
           set(state => {
             state.loading = false
             state.error = error instanceof Error ? error.message : 'Error al crear proyecto'
@@ -291,7 +292,7 @@ export const useProjectStore = create<ProjectState>()(
             timestamp: new Date().toISOString()
           })
         } catch (error) {
-          console.error('[ProjectStore] Failed to update project', error)
+          logger.error('Failed to update project', error, 'ProjectStore')
           set(state => {
             state.error = error instanceof Error ? error.message : 'Error al actualizar proyecto'
           })
@@ -320,7 +321,7 @@ export const useProjectStore = create<ProjectState>()(
           })
         } catch (error) {
           // Rollback optimistic update on error
-          console.error('[ProjectStore] Failed to delete project, rolling back', error)
+          logger.error('Failed to delete project, rolling back', error, 'ProjectStore')
           set(state => {
             state.projects = previousState
             state.currentProject = previousCurrent
@@ -336,8 +337,11 @@ export const useProjectStore = create<ProjectState>()(
           // Update project proposals count
           const projectIndex = state.projects.findIndex(p => p.id === projectId)
           if (projectIndex !== -1) {
-            state.projects[projectIndex].proposalsCount += 1
-            state.projects[projectIndex].updatedAt = new Date().toISOString()
+            const project = state.projects[projectIndex]
+            if (project) {
+              project.proposalsCount += 1
+              project.updatedAt = new Date().toISOString()
+            }
           }
 
           // Update current project if it's the same one
@@ -363,11 +367,12 @@ export const useProjectStore = create<ProjectState>()(
           if (state.currentProject?.id === projectId) {
             const proposalIndex = state.currentProject.proposals.findIndex(p => p.id === proposalId)
             if (proposalIndex !== -1) {
-              state.currentProject.proposals[proposalIndex] = {
-                ...state.currentProject.proposals[proposalIndex],
-                ...updates
+              const proposal = state.currentProject.proposals[proposalIndex]
+              if (proposal) {
+                // ✅ Use Object.assign for type-safe updates with exactOptionalPropertyTypes
+                Object.assign(proposal, updates)
+                state.currentProject.updatedAt = new Date().toISOString()
               }
-              state.currentProject.updatedAt = new Date().toISOString()
             }
           }
         })
@@ -378,11 +383,12 @@ export const useProjectStore = create<ProjectState>()(
           if (state.currentProject?.id === projectId) {
             const proposalIndex = state.currentProject.proposals.findIndex(p => p.id === proposalId)
             if (proposalIndex !== -1) {
-              state.currentProject.proposals[proposalIndex] = {
-                ...state.currentProject.proposals[proposalIndex],
-                status
+              const proposal = state.currentProject.proposals[proposalIndex]
+              if (proposal) {
+                // ✅ Direct property assignment for single field update
+                proposal.status = status
+                state.currentProject.updatedAt = new Date().toISOString()
               }
-              state.currentProject.updatedAt = new Date().toISOString()
             }
           }
         })
@@ -415,11 +421,12 @@ export const useProjectStore = create<ProjectState>()(
 
           const idx = state.currentProject.proposals.findIndex(p => p.id === proposalId)
           if (idx !== -1) {
-            state.currentProject.proposals[idx] = {
-              ...state.currentProject.proposals[idx],
-              status
+            const proposal = state.currentProject.proposals[idx]
+            if (proposal) {
+              // ✅ Direct property assignment for single field update
+              proposal.status = status
+              state.currentProject.updatedAt = new Date().toISOString()
             }
-            state.currentProject.updatedAt = new Date().toISOString()
           }
         })
       },

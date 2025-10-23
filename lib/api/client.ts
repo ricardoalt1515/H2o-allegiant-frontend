@@ -1,6 +1,7 @@
 // Base API client configuration for FastAPI backend integration
 
 import { retryWithBackoff, isRetryableHttpError, isNetworkError } from '@/lib/utils/retry'
+import { logger } from '@/lib/utils/logger'
 
 // Read API_DISABLED from environment variable
 export const API_DISABLED =
@@ -12,7 +13,8 @@ const API_BASE_URL = (() => {
   const url = process.env.NEXT_PUBLIC_API_BASE_URL
 
   if (!API_DISABLED && !url) {
-    console.error('❌ NEXT_PUBLIC_API_BASE_URL is not defined in environment variables')
+    const errorMsg = 'NEXT_PUBLIC_API_BASE_URL is not defined in environment variables'
+    logger.error(errorMsg, new Error(errorMsg), 'APIClient')
     throw new Error('API configuration error: NEXT_PUBLIC_API_BASE_URL is required when API is enabled')
   }
 
@@ -126,7 +128,7 @@ class APIClient {
 
             // Handle 401 Unauthorized globally
             if (response.status === 401 && this.onUnauthorized) {
-              console.warn('🔐 401 Unauthorized - Clearing session')
+              logger.warn('401 Unauthorized - Clearing session', 'APIClient')
               this.onUnauthorized()
             }
 
@@ -176,10 +178,7 @@ class APIClient {
           return false
         },
         onRetry: (error, attempt, delay) => {
-          console.warn(`🔄 Retrying request (attempt ${attempt}): ${endpoint}`, {
-            error: error.message,
-            delay: `${delay}ms`
-          })
+          logger.warn(`Retrying request (attempt ${attempt}): ${endpoint}`, 'APIClient')
         }
       }
     )

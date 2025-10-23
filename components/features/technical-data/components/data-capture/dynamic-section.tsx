@@ -254,20 +254,18 @@ export function DynamicSection({
 
   const content = (
     <div className="space-y-4">
-      {/* Fields Grid - ✅ OPTIMIZACIÓN: Adaptativo basado en tipo de campo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min">
+      {/* Fields Grid - ✅ OPTIMIZACIÓN: Máximo 2 columnas para mejor legibilidad */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4 auto-rows-min">
         {visibleFields.map((field) => (
           <div
             key={field.id}
             className={cn(
               // Multiline fields take full width
-              field.multiline && "md:col-span-2 lg:col-span-3",
-              // Tags take more space (multi-select)
-              field.type === "tags" && "md:col-span-2 lg:col-span-3",
-              // Fields with units are wider
-              field.type === "unit" && "md:col-span-1",
-              // Select can be more compact
-              field.type === "select" && "md:col-span-1"
+              field.multiline && "lg:col-span-2",
+              // Tags take full width (multi-select needs space)
+              field.type === "tags" && "lg:col-span-2",
+              // Combobox with long options takes full width
+              field.type === "combobox" && field.options && field.options.some(opt => opt.length > 30) && "lg:col-span-2"
             )}
           >
             <EditableCell

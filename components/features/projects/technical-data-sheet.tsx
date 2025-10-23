@@ -45,7 +45,8 @@ import type { DataSource, TableField, TableSection } from "@/lib/types/technical
 import { ResizableDataLayout, EngineeringDataTable } from "@/components/features/technical-data"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { TECHNICAL_TEMPLATES } from "@/lib/templates/technical-templates"
+// Templates deprecated - will be re-implemented with modular system
+// import { TECHNICAL_TEMPLATES } from "@/lib/templates/technical-templates"
 import type { VersionSource } from "@/lib/project-types"
 import { TechnicalFormSkeleton } from "@/components/ui/loading-states"
 
@@ -252,34 +253,26 @@ export function TechnicalDataSheet({ projectId }: TechnicalDataSheetProps) {
         </CardHeader>
       </Card>
 
-      {/* Templates Dialog */}
+      {/* Templates Dialog - DISABLED: Templates being re-implemented with modular system */}
       <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Use Template</DialogTitle>
-            <DialogDescription>Apply a template to accelerate initial data capture. You can merge with your data or replace it.</DialogDescription>
+            <DialogTitle>Templates Coming Soon</DialogTitle>
+            <DialogDescription>
+              Templates are being re-implemented with a new modular system.
+              This feature will be available soon with sector-specific templates.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            {TECHNICAL_TEMPLATES.map((tpl) => (
-              <div key={tpl.id} className="flex items-center justify-between rounded-md border p-3">
-                <div>
-                  <p className="font-medium">{tpl.name}</p>
-                  {tpl.description && (
-                    <p className="text-xs text-muted-foreground">{tpl.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={async () => {
-                    await applyTemplate(projectId, tpl.sections, 'merge', { label: `Template: ${tpl.name}` })
-                    setTemplateOpen(false)
-                  }}>Merge</Button>
-                  <Button size="sm" onClick={async () => {
-                    await applyTemplate(projectId, tpl.sections, 'replace', { label: `Template: ${tpl.name}` })
-                    setTemplateOpen(false)
-                  }}>Replace</Button>
-                </div>
-              </div>
-            ))}
+            <p className="text-sm text-muted-foreground">
+              The new template system will provide:
+            </p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              <li>Sector-specific templates (Municipal, Industrial, Commercial, Residential)</li>
+              <li>Subsector optimization (Food Processing, Hotels, Textile, etc.)</li>
+              <li>Pre-filled default values based on industry standards</li>
+              <li>Intelligent field selection</li>
+            </ul>
           </div>
         </DialogContent>
       </Dialog>

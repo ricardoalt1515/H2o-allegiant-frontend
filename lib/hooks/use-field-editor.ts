@@ -74,7 +74,7 @@ export function useFieldEditor({
   field,
   onSave,
   autoSave = false,
-  autoSaveDelay = 500
+  autoSaveDelay = 300 // ✅ Reducido de 500ms a 300ms para mejor responsiveness
 }: UseFieldEditorOptions) {
   // ✅ Estado consolidado con useReducer
   const [state, dispatch] = useReducer(
@@ -92,7 +92,7 @@ export function useFieldEditor({
   const validateValue = useCallback((value: string | number | string[]): string | null => {
     // Required field validation
     if (field.required && (!value || value === "" || (Array.isArray(value) && value.length === 0))) {
-      return "Este campo es requerido"
+      return "This field is requeried"
     }
 
     // Custom validation rule
@@ -119,7 +119,7 @@ export function useFieldEditor({
 
   useEffect(() => {
     if (!autoSave || !onSave) return
-    
+
     // Solo auto-guardar si:
     // 1. Estamos en modo edición
     // 2. El valor cambió
@@ -130,8 +130,9 @@ export function useFieldEditor({
       validationStatus !== 'invalid'
     ) {
       onSave(debouncedValue, debouncedUnit, state.notes)
-      // ✅ FIX: Cerrar modo edición después de auto-save exitoso
-      dispatch({ type: 'SAVE' })
+      // ✅ FIX: NO cerrar modo edición en auto-save
+      // El usuario sale explícitamente con: click fuera, Enter, o Escape
+      // dispatch({ type: 'SAVE' }) ← REMOVIDO
     }
   }, [autoSave, debouncedValue, debouncedUnit, validationStatus, state.notes, state.mode, field.value, field.unit, onSave])
 

@@ -3,10 +3,44 @@
  */
 
 import { APP_CONFIG } from "@/lib/constants"
+import { logger } from "@/lib/utils/logger"
+
+/**
+ * JSON-serializable value type
+ * Represents any value that can be safely serialized to JSON
+ */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+
+/**
+ * Error context - must be JSON-serializable for logging services
+ */
+export type ErrorContext = Record<string, JsonValue>
+
+/**
+ * Safely convert unknown value to JsonValue
+ * Returns string representation for non-serializable values
+ */
+function toJsonValue(value: unknown): JsonValue {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value.map(toJsonValue)
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.parse(JSON.stringify(value))
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
+}
 
 export interface AppError extends Error {
   code?: string
-  context?: Record<string, any>
+  context?: ErrorContext
   timestamp?: string
   userAgent?: string
   url?: string
@@ -33,11 +67,14 @@ export type ErrorType = typeof ERROR_TYPES[keyof typeof ERROR_TYPES]
 export function createAppError(
   message: string,
   type: ErrorType = ERROR_TYPES.UNKNOWN,
-  context?: Record<string, any>
+  context?: ErrorContext
 ): AppError {
   const error = new Error(message) as AppError
   error.code = type
-  error.context = context
+  // ✅ Only assign context if provided (exactOptionalPropertyTypes)
+  if (context) {
+    error.context = context
+  }
   error.timestamp = new Date().toISOString()
   error.userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : 'server'
   error.url = typeof window !== 'undefined' ? window.location.href : 'server'
@@ -48,7 +85,7 @@ export function createAppError(
 /**
  * Log error to console (and external service in production)
  */
-export function logError(error: Error | AppError, context?: Record<string, any>) {
+export function logError(error: Error | AppError, context?: ErrorContext) {
   const errorData = {
     message: error.message,
     stack: error.stack,
@@ -60,13 +97,12 @@ export function logError(error: Error | AppError, context?: Record<string, any>)
   }
 
   if (APP_CONFIG.IS_DEVELOPMENT) {
-    console.group('🚨 Error logged:')
-    console.error('Message:', error.message)
-    console.error('Stack:', error.stack)
-    console.error('Context:', errorData.context)
-    console.groupEnd()
+    logger.error('Error logged', error, 'ErrorHandler')
+    if (errorData.context) {
+      logger.debug('Error context', errorData.context, 'ErrorHandler')
+    }
   } else {
-    console.error('Error:', errorData.message)
+    logger.error('Production error', error, 'ErrorHandler')
     // In production, send to error reporting service
     // sendToErrorService(errorData)
   }
@@ -95,11 +131,11 @@ export async function withErrorHandling<T>(
 /**
  * Validation error creator
  */
-export function createValidationError(field: string, value: any, rule: string) {
+export function createValidationError(field: string, value: unknown, rule: string) {
   return createAppError(
     `Validation failed for field "${field}"`,
     ERROR_TYPES.VALIDATION,
-    { field, value, rule }
+    { field, value: toJsonValue(value), rule }
   )
 }
 
@@ -108,9 +144,13 @@ export function createValidationError(field: string, value: any, rule: string) {
  */
 export function createNetworkError(url: string, status?: number, statusText?: string) {
   return createAppError(
-    `Network request failed: ${status} ${statusText}`,
+    `Network request failed: ${status ?? 'unknown'} ${statusText ?? ''}`,
     ERROR_TYPES.NETWORK,
-    { url, status, statusText }
+    { 
+      url, 
+      status: status ?? null,
+      statusText: statusText ?? null
+    }
   )
 }
 
@@ -127,14 +167,21 @@ export function createPermissionError(action: string, resource: string) {
 
 /**
  * Error boundary error reporter
+ * 
+ * @param error - The error that was thrown
+ * @param errorInfo - React error info with componentStack
  */
-export function reportErrorBoundaryError(error: Error, errorInfo: any) {
-  const errorData = {
+export function reportErrorBoundaryError(
+  error: Error, 
+  errorInfo: { componentStack: string; digest?: string }
+) {
+  const errorData: ErrorContext = {
     message: error.message,
-    stack: error.stack,
+    stack: error.stack ?? 'No stack trace',
     componentStack: errorInfo.componentStack,
     timestamp: new Date().toISOString(),
-    type: 'ERROR_BOUNDARY'
+    type: 'ERROR_BOUNDARY',
+    digest: errorInfo.digest ?? null
   }
 
   logError(error, errorData)
@@ -158,11 +205,11 @@ export function measurePerformance<T>(
   if (result instanceof Promise) {
     return result.finally(() => {
       const end = performance.now()
-      console.log(`⏱️ ${name} took ${(end - start).toFixed(2)}ms`)
+      logger.debug(`Performance: ${name}`, { duration: `${(end - start).toFixed(2)}ms` }, 'Performance')
     })
   } else {
     const end = performance.now()
-    console.log(`⏱️ ${name} took ${(end - start).toFixed(2)}ms`)
+    logger.debug(`Performance: ${name}`, { duration: `${(end - start).toFixed(2)}ms` }, 'Performance')
     return result
   }
 }

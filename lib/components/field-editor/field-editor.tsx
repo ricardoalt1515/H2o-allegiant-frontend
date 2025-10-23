@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,15 +8,17 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { TagInput } from "@/components/ui/tag-input"
+import { Combobox } from "@/components/ui/combobox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Edit3, MessageSquare, Info, X, Save, AlertCircle, CheckCircle2, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useFieldEditor } from "@/lib/hooks/use-field-editor"
-import type { TableField, DataSource } from "@/lib/types/technical-data"
+import { useClickOutside } from "@/lib/hooks/use-click-outside"
+import { TableField, DataSource } from "@/lib/types/technical-data"
 
 /**
  * ✅ Componente compartido para editar campos técnicos
- * Soporta: text, number, select, unit, tags, multiline
+ * Soporta: text, number, select, combobox, unit, tags, multiline
  * Modos: inline (dynamic-section), table (engineering-table), dialog (futuro)
  */
 
@@ -79,6 +81,18 @@ export function FieldEditor({
 
   const sourceInfo = sourceConfig[field.source]
 
+  // ✅ Click outside to save and close editing mode
+  const editorRef = useRef<HTMLDivElement>(null)
+  useClickOutside(
+    editorRef as React.RefObject<HTMLElement>,
+    () => {
+      if (state.mode === 'editing' && autoSave) {
+        actions.save()
+      }
+    },
+    state.mode === 'editing'
+  )
+
   // ✅ Keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !field.multiline) {
@@ -110,6 +124,17 @@ export function FieldEditor({
               ))}
             </SelectContent>
           </Select>
+        )
+
+      case "combobox":
+        return (
+          <Combobox
+            value={state.value.toString()}
+            onChange={(v) => actions.updateValue(v)}
+            options={field.options || []}
+            placeholder={field.placeholder || "Select or type..."}
+            className={mode === 'table' ? "h-8" : "h-8"}
+          />
         )
 
       case "unit":
@@ -195,10 +220,10 @@ export function FieldEditor({
         <div className={cn("flex items-center gap-2 min-w-0", className)}>
           {renderInput()}
           <div className="flex gap-1">
-            <Button size="sm" variant="ghost" onClick={() => actions.save()} className="h-8 w-8 p-0">
+            <Button type="button" size="sm" variant="ghost" onClick={() => actions.save()} className="h-8 w-8 p-0">
               <Check className="h-4 w-4 text-green-600" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => actions.cancel()} className="h-8 w-8 p-0">
+            <Button type="button" size="sm" variant="ghost" onClick={() => actions.cancel()} className="h-8 w-8 p-0">
               <X className="h-4 w-4 text-red-600" />
             </Button>
           </div>
@@ -226,7 +251,7 @@ export function FieldEditor({
 
   // ✅ MODE: INLINE - Vista completa para dynamic-section
   return (
-    <div className={cn("group space-y-2", className)}>
+    <div ref={editorRef} className={cn("group space-y-2", className)}>
       {/* Header */}
       {showLabel && (
         <div className="flex items-center justify-between">
@@ -236,12 +261,13 @@ export function FieldEditor({
               {field.required && <span className="text-red-500">*</span>}
             </Label>
             {field.description && (
-              <Button variant="ghost" size="sm" className="h-4 w-4 p-0" title={field.description}>
+              <Button type="button" variant="ghost" size="sm" className="h-4 w-4 p-0" title={field.description}>
                 <Info className="h-3 w-3 text-muted-foreground" />
               </Button>
             )}
             {showNotes && (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 className="h-4 w-4 p-0"
@@ -260,6 +286,7 @@ export function FieldEditor({
           {showRemove && onRemove && (
             <>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -320,10 +347,11 @@ export function FieldEditor({
           )}
           {!autoSave && (
             <div className="flex gap-1 justify-end">
-              <Button size="sm" variant="ghost" onClick={() => actions.cancel()} title="Esc para cancelar">
+              <Button type="button" size="sm" variant="ghost" onClick={() => actions.cancel()} title="Esc para cancelar">
                 <X className="h-3 w-3" />
               </Button>
               <Button
+                type="button"
                 size="sm"
                 onClick={() => actions.save()}
                 title="Enter para guardar"
@@ -402,6 +430,7 @@ export function FieldEditor({
           />
           <div className="flex justify-end gap-2">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => actions.cancel()}
@@ -409,6 +438,7 @@ export function FieldEditor({
               Cancelar
             </Button>
             <Button
+              type="button"
               size="sm"
               onClick={() => actions.saveNotes()}
               disabled={state.notes === field.notes}

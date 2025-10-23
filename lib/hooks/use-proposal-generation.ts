@@ -29,6 +29,7 @@ import {
   type ProposalGenerationRequest,
   type ProposalJobStatus,
 } from '@/lib/api/proposals'
+import { logger } from '@/lib/utils/logger'
 
 export interface UseProposalGenerationOptions {
   /**
@@ -145,9 +146,8 @@ export function useProposalGeneration(
     async (
       generateOptions: Partial<ProposalGenerationRequest>
     ) => {
-      console.log('🟢 [Hook] generate() function called!', generateOptions)
+      logger.debug('Proposal generation hook called', { options: generateOptions }, 'useProposalGeneration')
       try {
-        console.log('🟢 [Hook] Inside try block')
         // Reset state
         setError(null)
         setProgress(0)
@@ -164,14 +164,13 @@ export function useProposalGeneration(
         }
 
         // Start generation
-        console.log('🚀 [Hook] Calling generateProposal API...', request)
+        logger.info('Calling proposal generation API', { request }, 'useProposalGeneration')
         const initialStatus = await ProposalsAPI.generateProposal(request)
-        console.log('✅ [Hook] Initial status received:', initialStatus)
+        logger.debug('Initial proposal status received', { jobId: initialStatus.jobId, status: initialStatus.status }, 'useProposalGeneration')
 
         // Update state even if component unmounted (polling will continue in background)
         setStatus(initialStatus)
         setCurrentStep(initialStatus.currentStep)
-        console.log('✅ [Hook] State updated with initial status')
 
         // Add initial reasoning
         setReasoning((prev) => [
@@ -181,7 +180,7 @@ export function useProposalGeneration(
         ])
 
         // Poll for status
-        console.log('🔄 [Hook] Starting polling with jobId:', initialStatus.jobId)
+        logger.info('Starting status polling', { jobId: initialStatus.jobId }, 'useProposalGeneration')
         await pollProposalStatus(initialStatus.jobId, {
           intervalMs: 2500,
           maxDurationMs: 600000, // 10 minutes (AI generation can take 5-7 min)
@@ -256,11 +255,7 @@ export function useProposalGeneration(
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown error occurred'
-        console.error('❌ [Hook] Error in generate():', {
-          error: err,
-          message: errorMessage,
-          stack: err instanceof Error ? err.stack : undefined,
-        })
+        logger.error('Error in proposal generation', err, 'useProposalGeneration')
         setError(errorMessage)
         setIsGenerating(false)
         onError?.(errorMessage)

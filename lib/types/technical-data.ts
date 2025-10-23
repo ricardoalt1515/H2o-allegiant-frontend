@@ -29,6 +29,7 @@ export interface TableField {
     field: string
     value: string | string[]
   }
+  targetSection?: string  // ✅ Metadata: usado en librería de parámetros para indicar sección destino
 }
 
 export interface TableSection {

@@ -36,7 +36,7 @@ export type FieldImportance = typeof FIELD_IMPORTANCE[number]
 /**
  * Field types for technical data
  */
-export const FIELD_TYPES = ['text', 'number', 'select', 'unit', 'tags'] as const
+export const FIELD_TYPES = ['text', 'number', 'select', 'unit', 'tags', 'combobox'] as const
 export type FieldType = typeof FIELD_TYPES[number]
 
 /**

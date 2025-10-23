@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -17,9 +18,11 @@ interface SectionAccordionItemProps {
 
 /**
  * ✅ OPTIMIZACIÓN: Componente reutilizable para items de accordion
- * Elimina ~100 líneas de código duplicado
+ * - Elimina ~100 líneas de código duplicado
+ * - React.memo previene re-renders innecesarios
+ * - Se re-renderiza solo cuando section o props cambian
  */
-export function SectionAccordionItem({
+export const SectionAccordionItem = memo(function SectionAccordionItem({
   section,
   isFixed = false,
   onFieldChange,
@@ -62,7 +65,7 @@ export function SectionAccordionItem({
             )}
             {isFixed && (
               <Badge variant="outline" className="text-xs">
-                Permanente
+                Permanent
               </Badge>
             )}
           </div>
@@ -84,4 +87,4 @@ export function SectionAccordionItem({
       </AccordionContent>
     </AccordionItem>
   )
-}
+})

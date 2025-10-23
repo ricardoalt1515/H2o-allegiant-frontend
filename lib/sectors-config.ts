@@ -16,6 +16,7 @@ export type Subsector =
   | "textile_manufacturing"
   | "pharmaceutical_manufacturing"
   | "chemical_processing"
+  | "oil_gas"
   // Municipal
   | "government_building"
   | "water_utility"
@@ -67,6 +68,7 @@ export const sectorsConfig: SectorConfig[] = [
       { id: "textile_manufacturing", label: "Textile Manufacturing" },
       { id: "pharmaceutical_manufacturing", label: "Pharmaceutical Manufacturing" },
       { id: "chemical_processing", label: "Chemical Processing" },
+      { id: "oil_gas", label: "Oil & Gas" },
       { id: "other", label: "Other" }
     ]
   },

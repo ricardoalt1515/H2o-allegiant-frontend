@@ -42,6 +42,7 @@ import { useProposalGeneration } from "@/lib/hooks/use-proposal-generation"
 import { useCurrentProject } from "@/lib/stores"
 import { useTechnicalSummaryData } from "@/lib/stores/technical-data-store"
 import type { ProjectDetail } from "@/lib/project-types"
+import { logger } from "@/lib/utils/logger"
 
 interface IntelligentProposalGeneratorProps {
   projectId: string
@@ -92,7 +93,7 @@ export function IntelligentProposalGeneratorComponent({
 
       try {
         // Reload project to get the new proposal in store
-        console.log('🔄 Reloading project to include new proposal...')
+        logger.debug('Reloading project to include new proposal', { projectId })
         await fetch(`/api/projects/${projectId}`, { cache: 'no-store' })
         
         // Wait a bit to ensure store updates
@@ -101,7 +102,7 @@ export function IntelligentProposalGeneratorComponent({
         onProposalGenerated?.(proposalId)
         router.push(`/project/${projectId}/proposals/${proposalId}`)
       } catch (error) {
-        console.error('Error reloading project:', error)
+        logger.error('Error reloading project after proposal generation', error, 'ProposalGenerator')
         // Still navigate even if reload fails
         router.push(`/project/${projectId}/proposals/${proposalId}`)
       }
@@ -122,9 +123,12 @@ export function IntelligentProposalGeneratorComponent({
    * Handle start generation button click
    */
   const handleStartGeneration = async () => {
-    console.log('🔴 [Component] handleStartGeneration called!')
-    console.log('🔴 [Component] Project:', { id: project?.id, name: project?.name })
-    console.log('🔴 [Component] Can generate:', canGenerate, `(${completeness.percentage}%)`)
+    logger.debug('Proposal generation initiated', {
+      projectId: project?.id,
+      projectName: project?.name,
+      canGenerate,
+      completeness: completeness.percentage
+    })
     
     if (!project) {
       toast.error('Error', {
@@ -140,13 +144,17 @@ export function IntelligentProposalGeneratorComponent({
       return
     }
 
-    console.log('🔴 [Component] About to show progress dialog')
     // Show progress dialog
     setShowProgress(true)
     onGenerationStart?.()
 
     try {
-      console.log('🔴 [Component] About to call generate()')
+      logger.info('Starting proposal generation', {
+        projectId,
+        proposalType,
+        completeness: completeness.percentage
+      })
+      
       // Start generation
       await generate({
         proposalType,
@@ -157,9 +165,10 @@ export function IntelligentProposalGeneratorComponent({
           },
         },
       })
-      console.log('✅ [Component] generate() completed successfully')
+      
+      logger.info('Proposal generation completed successfully', { projectId })
     } catch (error) {
-      console.error('❌ [Component] Error in handleStartGeneration:', error)
+      logger.error('Error in proposal generation flow', error, 'ProposalGenerator')
       toast.error('Error generating proposal', {
         description: error instanceof Error ? error.message : 'Unknown error',
       })

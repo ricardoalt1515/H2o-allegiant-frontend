@@ -1,189 +1,49 @@
 import { TableSection, DataSource, TableField } from "@/lib/types/technical-data"
 import { getParameterById } from "@/lib/parameter-library"
+import { applyTemplate, createTemplateRegistry, getTemplateForProject } from "@/lib/templates"
+import type { Sector, Subsector } from "@/lib/sectors-config"
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// HELPER FUNCTIONS (must be defined before template)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/**
- * Helper: Create field from parameter library
- * Extracts parameter definition and converts to TableField
- */
-const fromLibrary = (parameterId: string): TableField | null => {
-  const param = getParameterById(parameterId)
-  
-  if (!param) {
-    console.error(`❌ Parameter "${parameterId}" NOT FOUND in library`)
-    return null
-  }
-  
-  const field: TableField = {
-    id: parameterId,
-    label: param.label,
-    type: param.type,
-    value: param.defaultValue ?? "",
-    source: param.suggestedSource ?? ("manual" as DataSource),
-    importance: param.importance ?? "optional"
-  } as TableField
-  
-  // Add optional properties only if defined
-  if (param.defaultUnit !== undefined) field.unit = param.defaultUnit
-  if (param.availableUnits !== undefined) field.units = param.availableUnits
-  if (param.required !== undefined) field.required = param.required
-  if (param.description !== undefined) field.description = param.description
-  if (param.validationRule !== undefined) field.validationRule = param.validationRule
-  if (param.validationMessage !== undefined) field.validationMessage = param.validationMessage
-  if (param.options !== undefined) field.options = param.options
-  if (param.multiline !== undefined) field.multiline = param.multiline
-  if (param.placeholder !== undefined) field.placeholder = param.placeholder
-  
-  return field
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// BASE TEMPLATE
+// INITIAL TECHNICAL SHEET CREATION
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 /**
  * Creates initial technical sheet with complete sections
+ *
+ * Uses the modular template system:
+ * - If sector/subsector provided: applies optimized template (e.g., Oil & Gas)
+ * - If not provided: falls back to base template (20 essential fields)
  * 
- * This template matches the original structure exactly.
- * Field Notes is ALWAYS the last section (no external function needed).
- * 
- * Sections (8 total):
- * 1. Project Information - Essential context
- * 2. Consumption & Operating Costs - Economic data
- * 3. Project Constraints - Limitations
- * 4. General Project Data - Design parameters
- * 5. Raw Water Parameters - Water quality
- * 6. Treatment Objectives - Quality goals (empty, add from library)
- * 7. Regulatory Compliance - Standards
- * 8. Field Notes - Engineer observations (ALWAYS LAST)
+ * Template selection logic:
+ * 1. Try exact match (sector + subsector) → e.g., "industrial-oil-gas"
+ * 2. Fallback to sector-only → e.g., "industrial"
+ * 3. Default to base template
+ *
+ * @param sector - Project sector (optional)
+ * @param subsector - Project subsector (optional)
+ * @returns Complete TableSection[] ready for use
  */
-export const createInitialTechnicalSheetData = (): TableSection[] => {
-  return [
-    // ========================================
-    // SECTION 1: Project Information
-    // ========================================
-    {
-      id: "project-information",
-      title: "Project Information",
-      description: "Essential project context and objectives",
-      allowCustomFields: false,
-      fields: [
-        "water-source",
-        "water-uses",
-        "existing-system",
-        "existing-system-description",
-        "project-objective",
-        "reuse-goals",
-        "discharge-point"
-      ].map(fromLibrary).filter((f): f is TableField => f !== null)
-    },
-
-    // ========================================
-    // SECTION 2: Consumption & Costs
-    // ========================================
-    {
-      id: "consumption-costs",
-      title: "Consumption & Operating Costs",
-      description: "Economic and operational data for ROI analysis",
-      allowCustomFields: true,
-      fields: [
-        "water-cost",
-        "water-consumption",
-        "wastewater-generated",
-        "people-served-daily",
-        "people-served-exact"
-      ].map(fromLibrary).filter((f): f is TableField => f !== null)
-    },
-
-    // ========================================
-    // SECTION 3: Project Constraints
-    // ========================================
-    {
-      id: "project-constraints",
-      title: "Project Constraints",
-      description: "Limitations and special considerations affecting design",
-      allowCustomFields: true,
-      fields: [
-        "constraints"
-      ].map(fromLibrary).filter((f): f is TableField => f !== null)
-    },
-
-    // ========================================
-    // SECTION 4: General Data
-    // ========================================
-    {
-      id: "general-data",
-      title: "General Project Data",
-      description: "Basic design parameters",
-      allowCustomFields: true,
-      fields: [
-        "design-flow",
-        "population-served",
-        "operating-hours"
-      ].map(fromLibrary).filter((f): f is TableField => f !== null)
-    },
-
-    // ========================================
-    // SECTION 5: Raw Water Parameters
-    // ========================================
-    {
-      id: "raw-water-parameters",
-      title: "Raw Water Parameters",
-      description: "Physical, chemical and bacteriological characteristics",
-      allowCustomFields: true,
-      fields: [
-        "turbidity",
-        "ph",
-        "temperature",
-        "tds",
-        "hardness"
-      ].map(fromLibrary).filter((f): f is TableField => f !== null)
-    },
-
-    // ========================================
-    // SECTION 6: Treatment Objectives
-    // ========================================
-    {
-      id: "treatment-objectives",
-      title: "Treatment Objectives",
-      description: "Required water quality goals",
-      allowCustomFields: true,
-      fields: []
-    },
-
-    // ========================================
-    // SECTION 7: Regulatory Compliance
-    // ========================================
-    {
-      id: "regulatory-compliance",
-      title: "Regulatory Compliance",
-      description: "Applicable standards and regulations",
-      allowCustomFields: true,
-      fields: [
-        "drinking-water-standard",
-        "discharge-standard",
-        "permit-required",
-        "seismic-code",
-        "operation-manual"
-      ].map(fromLibrary).filter((f): f is TableField => f !== null)
-    },
-
-    // ========================================
-    // SECTION 8: Field Notes (ALWAYS LAST)
-    // ========================================
-    {
-      id: "engineer-notes",
-      title: "Field Notes",
-      description: "Engineer observations, assumptions and detected risks on site",
-      allowCustomFields: false,
-      fields: [
-        "field-notes"
-      ].map(fromLibrary).filter((f): f is TableField => f !== null)
-    }
-  ]
+export const createInitialTechnicalSheetData = (
+  sector?: Sector | string,
+  subsector?: Subsector | string
+): TableSection[] => {
+  const registry = createTemplateRegistry()
+  
+  // Get best matching template for project
+  const template = getTemplateForProject(
+    sector as Sector | undefined,
+    subsector as Subsector | undefined,
+    registry
+  )
+  
+  if (template) {
+    console.log(`📋 Applying template: ${template.name} (${template.id})`)
+    return applyTemplate(template.id, registry)
+  }
+  
+  // Fallback to base if no template found (shouldn't happen)
+  console.warn('⚠️ No template found, using base')
+  return applyTemplate("base", registry)
 }
 
 // Re-export from parameter library

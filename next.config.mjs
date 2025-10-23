@@ -6,15 +6,16 @@ const nextConfig = {
   // Production optimizations
   compress: true,
 
-  // Ignore ESLint warnings during production builds
-  // Warnings don't affect functionality, can be fixed post-MVP
+  // ✅ Enable ESLint checks during builds for better code quality
+  // This prevents bugs from reaching production
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 
-  // Ignore TypeScript errors during builds (for faster MVP deployment)
+  // ✅ Enable TypeScript checks during builds
+  // Type errors will be caught early, preventing runtime bugs
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Image optimization configuration
@@ -41,9 +42,6 @@ const nextConfig = {
 
   // Standalone output for Amplify (optimized deployment)
   output: 'standalone',
-
-  // Enable SWC minification for faster builds
-  swcMinify: true,
 
   // Turbopack (for development)
   turbopack: {},

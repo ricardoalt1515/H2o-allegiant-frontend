@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo, useEffect } from "react"
+import { useMemo, useEffect, memo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { logger } from "@/lib/utils/logger"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,25 +48,17 @@ export function ProposalsTab({ project }: ProposalsTabProps) {
 
   // Load technical data when component mounts
   useEffect(() => {
-    console.log('🔄 [ProposalsTab] Loading technical data for project:', project.id)
+    logger.debug('Loading technical data for proposals tab', { projectId: project.id }, 'ProposalsTab')
     loadTechnicalData(project.id)
   }, [project.id, loadTechnicalData])
 
   const completion = useMemo(() => {
     const result = overallCompletion(sections)
-    console.log('📊 [ProposalsTab] Completeness calculation:', {
+    logger.debug('Completeness calculation', {
       projectId: project.id,
       sectionsCount: sections.length,
-      totalFields: result.total,
-      completedFields: result.completed,
       percentage: result.percentage,
-      sections: sections.map(s => ({
-        id: s.id,
-        title: s.title,
-        fieldsCount: s.fields.length,
-        filledFields: s.fields.filter(f => f.value !== undefined && f.value !== "" && f.value !== null).length
-      }))
-    })
+    }, 'ProposalsTab')
     return result
   }, [sections, project.id])
   const readinessThreshold = 70
