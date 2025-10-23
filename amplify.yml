@@ -3,25 +3,13 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Display Node.js and npm versions for debugging
         - node --version
         - npm --version
-        # Set npm config to use legacy peer deps (global for this build)
-        - npm config set legacy-peer-deps true
-        # Install dependencies
         - npm ci
-        # Verify installation
-        - echo "✅ Dependencies installed successfully"
     build:
       commands:
-        # Validate environment variables before build
-        - echo "🔍 Validating environment variables..."
         - npm run validate:env
-        # Build Next.js application
-        - echo "🏗️ Building Next.js application..."
         - npm run build
-        # Display build info
-        - echo "✅ Build completed successfully"
   artifacts:
     # Next.js 15 outputs to .next directory
     baseDirectory: .next
