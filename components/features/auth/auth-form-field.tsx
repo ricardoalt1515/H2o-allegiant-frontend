@@ -30,7 +30,7 @@ export interface AuthFormFieldProps {
   /** Field identifier (matches the input's name attribute) */
   htmlFor?: string
   /** Error from React Hook Form */
-  error?: FieldError | string
+  error?: FieldError | string | undefined
   /** Whether the field is required */
   required?: boolean
   /** Helper text to display below the input */
