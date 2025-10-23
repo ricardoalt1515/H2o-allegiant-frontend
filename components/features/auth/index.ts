@@ -26,13 +26,16 @@ export {
   PasswordStrengthMeterCompact
 } from './password-strength-meter'
 
-// Premium design components
+// Premium design components - Background effects
 export {
-  FloatingOrbs,
-  GridPattern,
+  AdaptiveBackground,
+  TechnicalGrid,
+  FlowLines,
+  WaterBubbles,
   NoiseTexture,
-  MeshGradient,
-  PremiumBackground
+  LiquidGlassBackground,
+  PremiumBackground,
+  FluidEngineeringBackground
 } from './background-effects'
 
 export { FeatureCard, FeatureList } from './feature-card'
