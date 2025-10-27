@@ -1,26 +1,27 @@
-"use client"
+"use client";
 
-import { EnhancedFileUploader } from "./enhanced-file-uploader"
+import { FileUploader } from "@/components/shared/common/file-uploader";
 
 interface FilesTabEnhancedProps {
-  projectId: string
-  onDataImported?: () => void
+	projectId: string;
+	onDataImported?: () => void;
 }
 
-export function FilesTabEnhanced({ projectId, onDataImported }: FilesTabEnhancedProps) {
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-gradient">Gestión de Archivos</h2>
-        <p className="text-muted-foreground">
-          Sube análisis de laboratorio, reportes técnicos o documentos para extraer datos automáticamente con IA.
-        </p>
-      </div>
+export function FilesTabEnhanced({
+	projectId,
+	onDataImported,
+}: FilesTabEnhancedProps) {
+	return (
+		<div className="space-y-6">
+			<div className="space-y-2">
+				<h2 className="text-2xl font-semibold text-gradient">File managment</h2>
+				<p className="text-muted-foreground">
+					Upload laboratory analyses, technical reports or documents to
+					automatically extract data with AI.
+				</p>
+			</div>
 
-      <EnhancedFileUploader
-        projectId={projectId}
-        onImportComplete={onDataImported}
-      />
-    </div>
-  )
+			<FileUploader projectId={projectId} onUploadComplete={onDataImported} />
+		</div>
+	);
 }

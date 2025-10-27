@@ -1,480 +1,504 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { useDropzone } from "react-dropzone"
 import {
-  Upload,
-  FileText,
-  AlertCircle,
-  CheckCircle,
-  X,
-  FileSpreadsheet,
-  FileImage,
-  Eye,
-  Download,
-  ArrowRight,
-  Loader2
-} from "lucide-react"
+	AlertCircle,
+	CheckCircle,
+	FileImage,
+	FileSpreadsheet,
+	FileText,
+	Loader2,
+	Upload,
+	X,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { TIME_MS, UI_DELAYS } from "@/lib/constants";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
-
-export interface UploadedFile {
-  id: string
-  name: string
-  size: number
-  type: string
-  status: "uploading" | "analyzing" | "ready" | "error"
-  progress: number
-  url?: string
-  extractedData?: ExtractedData
-  error?: string
-}
-
-export interface ExtractedData {
-  type: "laboratory" | "excel" | "pdf" | "image"
-  confidence: number
-  detectedFields: DetectedField[]
-  preview: string
-  metadata: Record<string, any>
-}
-
-export interface DetectedField {
-  parameter: string
-  value: string | number
-  unit?: string
-  confidence: number
-  sourceLocation: string
-  suggestedMapping?: string
-}
+// ============================================================================
+// Types
+// ============================================================================
 
 interface FileUploaderProps {
-  onFilesChange: (files: UploadedFile[]) => void
-  onDataExtracted: (extractedData: ExtractedData[]) => void
-  acceptedTypes?: string[]
-  maxFiles?: number
-  maxSize?: number
-  className?: string
+	projectId: string;
+	onUploadComplete?: (() => void) | undefined;
+	maxFiles?: number;
+	maxSize?: number; // in bytes
+	className?: string;
 }
 
-const defaultAcceptedTypes = [
-  "application/pdf",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "image/jpeg",
-  "image/png",
-  "text/csv"
-]
-
-const fileIcons = {
-  "application/pdf": FileText,
-  "application/vnd.ms-excel": FileSpreadsheet,
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": FileSpreadsheet,
-  "text/csv": FileSpreadsheet,
-  "image/jpeg": FileImage,
-  "image/png": FileImage,
-  default: FileText
+interface UploadingFile {
+	id: string;
+	file: File;
+	progress: number;
+	status: "uploading" | "success" | "error";
+	error?: string;
 }
 
-// Mock function to simulate file processing
-const processFile = async (file: File): Promise<ExtractedData> => {
-  // Simulate processing time
-  await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000))
-
-  // Mock extracted data based on file type
-  if (file.type.includes("excel") || file.type.includes("spreadsheet") || file.name.includes("lab")) {
-    return {
-      type: "laboratory",
-      confidence: 0.92,
-      preview: "Laboratory analysis detected - San José River Waters",
-      metadata: {
-        sampleDate: "2024-01-15",
-        laboratory: "LACOMET",
-        samplePoint: "Main Intake"
-      },
-      detectedFields: [
-        {
-          parameter: "Turbidity",
-          value: 15.2,
-          unit: "NTU",
-          confidence: 0.95,
-          sourceLocation: "Sheet1, Cell B5",
-          suggestedMapping: "raw-water-parameters.turbidity"
-        },
-        {
-          parameter: "pH",
-          value: 7.1,
-          confidence: 0.98,
-          sourceLocation: "Sheet1, Cell B8",
-          suggestedMapping: "raw-water-parameters.ph"
-        },
-        {
-          parameter: "Apparent Color",
-          value: 28,
-          unit: "UPC",
-          confidence: 0.87,
-          sourceLocation: "Sheet1, Cell B12",
-          suggestedMapping: "raw-water-parameters.color"
-        },
-        {
-          parameter: "Total Iron",
-          value: 0.85,
-          unit: "mg/L",
-          confidence: 0.91,
-          sourceLocation: "Sheet1, Cell B15",
-          suggestedMapping: "raw-water-parameters.iron"
-        },
-        {
-          parameter: "Total Hardness",
-          value: 185,
-          unit: "mg/L CaCO₃",
-          confidence: 0.89,
-          sourceLocation: "Sheet1, Cell B18",
-          suggestedMapping: "raw-water-parameters.hardness"
-        }
-      ]
-    }
-  } else if (file.type.includes("pdf")) {
-    return {
-      type: "pdf",
-      confidence: 0.78,
-      preview: "Technical document - Project specifications",
-      metadata: {
-        pages: 12,
-        documentType: "technical_specification"
-      },
-      detectedFields: [
-        {
-          parameter: "Design Flow",
-          value: 45,
-          unit: "L/s",
-          confidence: 0.82,
-          sourceLocation: "Page 3, Paragraph 2",
-          suggestedMapping: "general-data.design-flow"
-        },
-        {
-          parameter: "Population Served",
-          value: 22000,
-          unit: "inhabitants",
-          confidence: 0.76,
-          sourceLocation: "Page 1, Table 1",
-          suggestedMapping: "general-data.population-served"
-        }
-      ]
-    }
-  } else {
-    return {
-      type: "image",
-      confidence: 0.65,
-      preview: "Image processed - Possible technical data detected",
-      metadata: {
-        dimensions: "1920x1080",
-        format: file.type
-      },
-      detectedFields: [
-        {
-          parameter: "Detected Value",
-          value: "25.5",
-          confidence: 0.65,
-          sourceLocation: "Top right corner",
-          suggestedMapping: "unknown"
-        }
-      ]
-    }
-  }
+interface UploadedFileInfo {
+	id: string;
+	filename: string;
+	file_size: number;
+	file_type: string;
+	category: string;
+	uploaded_at: string;
 }
 
-function FileUploadZone({
-  onDrop,
-  isDragActive,
-  acceptedTypes
-}: {
-  onDrop: (files: File[]) => void
-  isDragActive: boolean
-  acceptedTypes: string[]
-}) {
-  return (
-    <div
-      className={cn(
-        "relative border-2 border-dashed rounded-lg p-8 text-center transition-colors",
-        isDragActive
-          ? "border-primary bg-primary/5"
-          : "border-muted-foreground/25 hover:border-primary/50"
-      )}
-    >
-      <div className="flex flex-col items-center space-y-4">
-        <div className="rounded-full bg-primary/10 p-4">
-          <Upload className="h-8 w-8 text-primary" />
-        </div>
-        <div className="space-y-2">
-          <p className="text-lg font-medium">
-            {isDragActive ? "Drop files here" : "Drag files or click"}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Supports PDF, Excel, CSV and images (max. 10MB each)
-          </p>
-        </div>
-        <Button variant="outline">
-          Select Files
-        </Button>
-      </div>
-    </div>
-  )
+// ============================================================================
+// Constants
+// ============================================================================
+
+const ACCEPTED_FILE_TYPES = {
+	"application/pdf": [".pdf"],
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+		".xlsx",
+	],
+	"application/vnd.ms-excel": [".xls"],
+	"text/csv": [".csv"],
+	"application/json": [".json"],
+	"text/plain": [".txt"],
+	"image/jpeg": [".jpg", ".jpeg"],
+	"image/png": [".png"],
+};
+
+const FILE_TYPE_ICONS: Record<string, typeof FileText> = {
+	pdf: FileText,
+	xlsx: FileSpreadsheet,
+	xls: FileSpreadsheet,
+	csv: FileSpreadsheet,
+	json: FileText,
+	txt: FileText,
+	jpg: FileImage,
+	jpeg: FileImage,
+	png: FileImage,
+};
+
+const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const DEFAULT_MAX_FILES = 5;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function formatFileSize(bytes: number): string {
+	if (bytes === 0) return "0 B";
+	const k = 1024;
+	const sizes = ["B", "KB", "MB", "GB"];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+	return `${parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 }
 
-function FilePreview({
-  file,
-  onRemove
-}: {
-  file: UploadedFile
-  onRemove: (fileId: string) => void
-}) {
-  const FileIcon = fileIcons[file.type as keyof typeof fileIcons] || fileIcons.default
+function formatDate(dateString: string): string {
+	const date = new Date(dateString);
+	const now = new Date();
+	const diffMs = now.getTime() - date.getTime();
+	const diffDays = Math.floor(diffMs / TIME_MS.DAY);
 
-  const getStatusColor = (status: UploadedFile["status"]) => {
-    switch (status) {
-      case "uploading": return "text-blue-600"
-      case "analyzing": return "text-yellow-600"
-      case "ready": return "text-green-600"
-      case "error": return "text-red-600"
-      default: return "text-muted-foreground"
-    }
-  }
+	if (diffDays === 0) return "Today";
+	if (diffDays === 1) return "Yesterday";
+	if (diffDays < 7) return `${diffDays} days ago`;
 
-  const getStatusIcon = (status: UploadedFile["status"]) => {
-    switch (status) {
-      case "uploading":
-      case "analyzing":
-        return <Loader2 className="h-4 w-4 animate-spin" />
-      case "ready":
-        return <CheckCircle className="h-4 w-4" />
-      case "error":
-        return <AlertCircle className="h-4 w-4" />
-      default:
-        return null
-    }
-  }
-
-  return (
-    <Card className="relative">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <FileIcon className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{file.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {(file.size / 1024 / 1024).toFixed(1)} MB
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => onRemove(file.id)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-0">
-        <div className="space-y-3">
-          {/* Status */}
-          <div className="flex items-center space-x-2">
-            <div className={getStatusColor(file.status)}>
-              {getStatusIcon(file.status)}
-            </div>
-            <span className={cn("text-sm", getStatusColor(file.status))}>
-              {file.status === "uploading" && "Uploading file..."}
-              {file.status === "analyzing" && "Analyzing content..."}
-              {file.status === "ready" && "Ready to import"}
-              {file.status === "error" && (file.error || "Processing error")}
-            </span>
-          </div>
-
-          {/* Progress Bar */}
-          {(file.status === "uploading" || file.status === "analyzing") && (
-            <Progress value={file.progress} className="h-2" />
-          )}
-
-          {/* Extracted Data Preview */}
-          {file.status === "ready" && file.extractedData && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="text-xs">
-                  {file.extractedData.detectedFields.length} fields detected
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs",
-                    file.extractedData.confidence > 0.8 ? "text-green-600" :
-                    file.extractedData.confidence > 0.6 ? "text-yellow-600" : "text-red-600"
-                  )}
-                >
-                  {Math.round(file.extractedData.confidence * 100)}% confidence
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {file.extractedData.preview}
-              </p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
+	return date.toLocaleDateString();
 }
+
+function getFileIcon(fileType: string): typeof FileText {
+	return FILE_TYPE_ICONS[fileType.toLowerCase()] || FileText;
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export function FileUploader({
-  onFilesChange,
-  onDataExtracted,
-  acceptedTypes = defaultAcceptedTypes,
-  maxFiles = 5,
-  maxSize = 10 * 1024 * 1024, // 10MB
-  className
+	projectId,
+	onUploadComplete,
+	maxFiles = DEFAULT_MAX_FILES,
+	maxSize = DEFAULT_MAX_SIZE,
+	className,
 }: FileUploaderProps) {
-  const [files, setFiles] = useState<UploadedFile[]>([])
+	const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+	const [uploadedFiles, setUploadedFiles] = useState<UploadedFileInfo[]>([]);
+	const [isLoadingFiles, setIsLoadingFiles] = useState(true);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const newFiles = acceptedFiles.slice(0, maxFiles - files.length).map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      status: "uploading" as const,
-      progress: 0
-    }))
+	// ========================================================================
+	// Fetch uploaded files from backend
+	// ========================================================================
 
-    setFiles(prev => [...prev, ...newFiles])
-    onFilesChange([...files, ...newFiles])
+	const fetchUploadedFiles = useCallback(async () => {
+		try {
+			const response = await fetch(`/api/v1/projects/${projectId}/files`, {
+				credentials: "include",
+			});
 
-    // Process each file
-    for (const newFile of newFiles) {
-      try {
-        // Simulate upload progress
-        const updateProgress = (progress: number) => {
-          setFiles(prev => prev.map(f =>
-            f.id === newFile.id ? { ...f, progress } : f
-          ))
-        }
+			if (!response.ok) {
+				throw new Error("Failed to fetch files");
+			}
 
-        // Upload simulation
-        for (let i = 0; i <= 100; i += 10) {
-          updateProgress(i)
-          await new Promise(resolve => setTimeout(resolve, 100))
-        }
+			const data = await response.json();
+			setUploadedFiles(data.files || []);
+		} catch (_error) {
+			toast.error("Error loading files");
+		} finally {
+			setIsLoadingFiles(false);
+		}
+	}, [projectId]);
 
-        // Change to analyzing status
-        setFiles(prev => prev.map(f =>
-          f.id === newFile.id
-            ? { ...f, status: "analyzing", progress: 0 }
-            : f
-        ))
+	useEffect(() => {
+		fetchUploadedFiles();
+	}, [fetchUploadedFiles]);
 
-        // Analyze file
-        const originalFile = acceptedFiles.find(f => f.name === newFile.name)
-        if (originalFile) {
-          const extractedData = await processFile(originalFile)
+	// ========================================================================
+	// Upload file to backend
+	// ========================================================================
 
-          setFiles(prev => prev.map(f =>
-            f.id === newFile.id
-              ? { ...f, status: "ready", progress: 100, extractedData }
-              : f
-          ))
-        }
-      } catch (error) {
-        setFiles(prev => prev.map(f =>
-          f.id === newFile.id
-            ? { ...f, status: "error", error: "Error al procesar el archivo" }
-            : f
-        ))
-      }
-    }
-  }, [files, maxFiles, onFilesChange])
+	const uploadFile = useCallback(
+		async (file: File, fileId: string) => {
+			const formData = new FormData();
+			formData.append("file", file);
+			formData.append("category", "general");
+			formData.append("process_with_ai", "false");
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: acceptedTypes.reduce((acc, type) => {
-      acc[type] = []
-      return acc
-    }, {} as Record<string, string[]>),
-    maxSize,
-    multiple: true
-  })
+			try {
+				// Simulate progress (since fetch doesn't support upload progress natively)
+				const progressInterval = setInterval(() => {
+					setUploadingFiles((prev) =>
+						prev.map((f) =>
+							f.id === fileId && f.progress < 90
+								? { ...f, progress: f.progress + 10 }
+								: f,
+						),
+					);
+				}, 200);
 
-  const removeFile = (fileId: string) => {
-    const updatedFiles = files.filter(f => f.id !== fileId)
-    setFiles(updatedFiles)
-    onFilesChange(updatedFiles)
-  }
+				const response = await fetch(`/api/v1/projects/${projectId}/files`, {
+					method: "POST",
+					body: formData,
+					credentials: "include",
+				});
 
-  const readyFiles = files.filter(f => f.status === "ready")
-  const extractedDataArray = readyFiles
-    .map(f => f.extractedData)
-    .filter(Boolean) as ExtractedData[]
+				clearInterval(progressInterval);
 
-  return (
-    <div className={cn("space-y-6", className)}>
-      {/* Upload Zone */}
-      <div {...getRootProps()}>
-        <input {...getInputProps()} />
-        <FileUploadZone
-          onDrop={onDrop}
-          isDragActive={isDragActive}
-          acceptedTypes={acceptedTypes}
-        />
-      </div>
+				if (!response.ok) {
+					const errorData = await response.json();
+					throw new Error(errorData.detail || "Upload failed");
+				}
 
-      {/* Files List */}
-      {files.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Uploaded Files</h3>
-            <Badge variant="outline">
-              {files.length} / {maxFiles}
-            </Badge>
-          </div>
+				// Mark as complete
+				setUploadingFiles((prev) =>
+					prev.map((f) =>
+						f.id === fileId
+							? { ...f, progress: 100, status: "success" as const }
+							: f,
+					),
+				);
 
-          <div className="grid gap-3">
-            {files.map(file => (
-              <FilePreview
-                key={file.id}
-                file={file}
-                onRemove={removeFile}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+				toast.success(`${file.name} uploaded successfully`);
 
-      {/* Import Actions */}
-      {readyFiles.length > 0 && (
-        <Alert>
-          <CheckCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>
-              {readyFiles.length} file(s) ready to import data
-            </span>
-            <Button
-              size="sm"
-              onClick={() => onDataExtracted(extractedDataArray)}
-            >
-              Import Data
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-    </div>
-  )
+				// Refresh file list
+				await fetchUploadedFiles();
+				onUploadComplete?.();
+
+				// Remove from uploading list after a delay
+				setTimeout(() => {
+					setUploadingFiles((prev) => prev.filter((f) => f.id !== fileId));
+				}, UI_DELAYS.SUCCESS_INDICATOR);
+			} catch (_error) {
+				setUploadingFiles((prev) =>
+					prev.map((f) =>
+						f.id === fileId
+							? {
+									...f,
+									status: "error" as const,
+									error:
+										_error instanceof Error ? _error.message : "Upload failed",
+								}
+							: f,
+					),
+				);
+				toast.error(`Failed to upload ${file.name}`);
+			}
+		},
+		[projectId, fetchUploadedFiles, onUploadComplete],
+	);
+
+	// ========================================================================
+	// Handle file drop
+	// ========================================================================
+
+	const onDrop = useCallback(
+		(acceptedFiles: File[]) => {
+			const totalFiles = uploadedFiles.length + uploadingFiles.length;
+
+			if (totalFiles + acceptedFiles.length > maxFiles) {
+				toast.error(`Maximum ${maxFiles} files allowed`);
+				return;
+			}
+
+			acceptedFiles.forEach((file) => {
+				if (file.size > maxSize) {
+					toast.error(
+						`${file.name} is too large. Max size: ${formatFileSize(maxSize)}`,
+					);
+					return;
+				}
+
+				const fileId = `${file.name}-${Date.now()}-${Math.random()}`;
+				const newUploadingFile: UploadingFile = {
+					id: fileId,
+					file,
+					progress: 0,
+					status: "uploading",
+				};
+
+				setUploadingFiles((prev) => [...prev, newUploadingFile]);
+				uploadFile(file, fileId);
+			});
+		},
+		[
+			maxFiles,
+			maxSize,
+			uploadedFiles.length,
+			uploadingFiles.length,
+			uploadFile,
+		],
+	);
+
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
+		onDrop,
+		accept: ACCEPTED_FILE_TYPES,
+		maxSize,
+		multiple: true,
+	});
+
+	// ========================================================================
+	// Delete file
+	// ========================================================================
+
+	const deleteFile = async (fileId: string) => {
+		try {
+			const response = await fetch(
+				`/api/v1/projects/${projectId}/files/${fileId}`,
+				{
+					method: "DELETE",
+					credentials: "include",
+				},
+			);
+
+			if (!response.ok) {
+				throw new Error("Failed to delete file");
+			}
+
+			toast.success("File deleted");
+			await fetchUploadedFiles();
+		} catch (_error) {
+			toast.error("Failed to delete file");
+		}
+	};
+
+	// ========================================================================
+	// Cancel uploading file
+	// ========================================================================
+
+	const cancelUpload = (fileId: string) => {
+		setUploadingFiles((prev) => prev.filter((f) => f.id !== fileId));
+		toast.info("Upload cancelled");
+	};
+
+	// ========================================================================
+	// Render
+	// ========================================================================
+
+	return (
+		<div className={cn("space-y-6", className)}>
+			{/* Upload Drop Zone */}
+			<Card className="aqua-panel">
+				<CardContent className="p-6">
+					<div
+						{...getRootProps()}
+						className={cn(
+							"relative cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors",
+							isDragActive
+								? "border-primary bg-primary/5"
+								: "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/25",
+						)}
+					>
+						<input {...getInputProps()} />
+
+						<div className="mx-auto flex flex-col items-center space-y-4">
+							<div className="rounded-full bg-primary/10 p-4">
+								<Upload className="h-8 w-8 text-primary" />
+							</div>
+
+							<div className="space-y-2">
+								<h3 className="text-lg font-semibold">
+									{isDragActive ? "Drop files here" : "Upload files"}
+								</h3>
+								<p className="text-sm text-muted-foreground">
+									Drag files or click to select
+								</p>
+								<p className="text-xs text-muted-foreground">
+									Supports PDF, Excel, CSV, JSON, TXT, Images (max{" "}
+									{formatFileSize(maxSize)})
+								</p>
+							</div>
+
+							<Button variant="outline">Select Files</Button>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Uploading Files */}
+			{uploadingFiles.length > 0 && (
+				<Card className="aqua-panel">
+					<CardContent className="p-6">
+						<h3 className="text-lg font-semibold mb-4">Uploading...</h3>
+						<div className="space-y-3">
+							{uploadingFiles.map((uploadingFile) => {
+								const FileIcon = getFileIcon(
+									uploadingFile.file.name.split(".").pop() || "",
+								);
+
+								return (
+									<div
+										key={uploadingFile.id}
+										className="flex items-center gap-3 p-3 rounded-lg border bg-card/50"
+									>
+										<div className="rounded-lg bg-primary/10 p-2">
+											<FileIcon className="h-5 w-5 text-primary" />
+										</div>
+
+										<div className="flex-1 min-w-0 space-y-1">
+											<div className="flex items-center justify-between">
+												<p className="text-sm font-medium truncate">
+													{uploadingFile.file.name}
+												</p>
+												<span className="text-xs text-muted-foreground ml-2">
+													{formatFileSize(uploadingFile.file.size)}
+												</span>
+											</div>
+
+											{uploadingFile.status === "uploading" && (
+												<div className="space-y-1">
+													<Progress
+														value={uploadingFile.progress}
+														className="h-1.5"
+													/>
+													<p className="text-xs text-muted-foreground">
+														{uploadingFile.progress}%
+													</p>
+												</div>
+											)}
+
+											{uploadingFile.status === "success" && (
+												<div className="flex items-center gap-1 text-green-600">
+													<CheckCircle className="h-3 w-3" />
+													<span className="text-xs">Uploaded successfully</span>
+												</div>
+											)}
+
+											{uploadingFile.status === "error" && (
+												<div className="flex items-center gap-1 text-red-600">
+													<AlertCircle className="h-3 w-3" />
+													<span className="text-xs">
+														{uploadingFile.error || "Upload failed"}
+													</span>
+												</div>
+											)}
+										</div>
+
+										{uploadingFile.status === "uploading" && (
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => cancelUpload(uploadingFile.id)}
+											>
+												<X className="h-4 w-4" />
+											</Button>
+										)}
+									</div>
+								);
+							})}
+						</div>
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Uploaded Files List */}
+			{isLoadingFiles ? (
+				<Card className="aqua-panel">
+					<CardContent className="p-6">
+						<div className="flex items-center justify-center gap-2">
+							<Loader2 className="h-5 w-5 animate-spin" />
+							<span className="text-sm text-muted-foreground">
+								Loading files...
+							</span>
+						</div>
+					</CardContent>
+				</Card>
+			) : uploadedFiles.length > 0 ? (
+				<Card className="aqua-panel">
+					<CardContent className="p-6">
+						<div className="flex items-center justify-between mb-4">
+							<h3 className="text-lg font-semibold">Uploaded Files</h3>
+							<span className="text-sm text-muted-foreground">
+								{uploadedFiles.length} / {maxFiles} files
+							</span>
+						</div>
+
+						<div className="space-y-3">
+							{uploadedFiles.map((file) => {
+								const FileIcon = getFileIcon(file.file_type);
+
+								return (
+									<div
+										key={file.id}
+										className="flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors"
+									>
+										<div className="rounded-lg bg-primary/10 p-2">
+											<FileIcon className="h-5 w-5 text-primary" />
+										</div>
+
+										<div className="flex-1 min-w-0">
+											<p className="text-sm font-medium truncate">
+												{file.filename}
+											</p>
+											<div className="flex items-center gap-3 text-xs text-muted-foreground">
+												<span>{formatFileSize(file.file_size)}</span>
+												<span>•</span>
+												<span className="uppercase">{file.file_type}</span>
+												<span>•</span>
+												<span>{formatDate(file.uploaded_at)}</span>
+											</div>
+										</div>
+
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => deleteFile(file.id)}
+											className="text-destructive hover:text-destructive"
+										>
+											<X className="h-4 w-4" />
+										</Button>
+									</div>
+								);
+							})}
+						</div>
+					</CardContent>
+				</Card>
+			) : (
+				<Card className="aqua-panel">
+					<CardContent className="p-6">
+						<p className="text-sm text-muted-foreground text-center">
+							No files uploaded yet
+						</p>
+					</CardContent>
+				</Card>
+			)}
+		</div>
+	);
 }

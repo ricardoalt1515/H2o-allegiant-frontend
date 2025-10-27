@@ -1,10 +1,11 @@
 // Technical data feature exports
-export { ResizableDataLayout } from "./components/data-capture/resizable-data-layout"
-export { FlexibleDataCapture } from "./components/data-capture/flexible-data-capture"
-export { DynamicSection } from "./components/data-capture/dynamic-section"
-export { TechnicalDataSummary } from "./components/data-capture/technical-data-summary"
-export { EngineeringDataTable } from "./components/data-capture/engineering-data-table"
-export { ParameterLibrary } from "./components/data-capture/parameter-library"
+
+export { DynamicSection } from "./components/data-capture/dynamic-section";
+export { EngineeringDataTable } from "./components/data-capture/engineering-data-table";
+export { FlexibleDataCapture } from "./components/data-capture/flexible-data-capture";
+export { ParameterLibrary } from "./components/data-capture/parameter-library";
+export { ResizableDataLayout } from "./components/data-capture/resizable-data-layout";
+export { TechnicalDataSummary } from "./components/data-capture/technical-data-summary";
 
 // ✅ REMOVED (2025-10-11): Phase 1 cleanup
 // - CompactDataTable (only used by EngineerDataView)
@@ -16,4 +17,9 @@ export { ParameterLibrary } from "./components/data-capture/parameter-library"
 // - EngineeringShortcuts (decorative only, promises features that don't exist)
 
 // Types - Export any types that are defined in these components
-export type { TableField, TableSection, DataSource, FieldType } from '@/lib/types/technical-data'
+export type {
+	DataSource,
+	FieldType,
+	TableField,
+	TableSection,
+} from "@/lib/types/technical-data";

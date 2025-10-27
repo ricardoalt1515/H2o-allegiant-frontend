@@ -1,9 +1,0 @@
-# Build outputs
-.next/
-node_modules/
-
-# Generated
-package-lock.json
-
-# Misc
-.DS_Store

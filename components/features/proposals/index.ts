@@ -1,35 +1,23 @@
 /**
- * Proposal Feature Components
- * 
- * Centralized exports for all proposal-related components.
- * Import from this index file to maintain clean imports.
+ * Proposal Feature Components - Simplified and Consolidated
+ *
+ * Clean, focused components that display data from the backend.
+ * No business logic, just presentation.
  */
 
-// Core proposal components
-export { AITransparency } from './ai-transparency'
-export { ProblemSolutionHero } from './problem-solution-hero'
-export { TreatmentTrainFlow } from './treatment-train-flow'
-export { ROIMetricsCards } from './roi-metrics-cards'
-export { IndustryComparison } from './industry-comparison'
-export { StickyDecisionPanel } from './sticky-decision-panel'
-export { EquipmentListImproved } from './equipment-list-improved'
-export { TechnicalApproachCollapsed } from './technical-approach-collapsed'
+// Legacy components (kept for backward compatibility)
+export { AITransparency } from "./ai-transparency";
+export { EquipmentListImproved } from "./equipment-list-improved";
+export { ProposalAISection } from "./proposal-ai-section";
+export { ProposalAssumptions } from "./proposal-assumptions";
+export { ProposalEconomics } from "./proposal-economics";
+// Modular section components
+export { ProposalHeader } from "./proposal-header";
+export { ProposalOverview } from "./proposal-overview";
+// Main proposal page component
+export { ProposalPage, ProposalPage as ProposalDetail } from "./proposal-page";
+export { ProposalTechnical } from "./proposal-technical";
+export { ProposalWaterQuality } from "./proposal-water-quality";
 
-// NEW: Modular proposal detail with tabs
-export { ProposalDetail } from './proposal-detail'
-export type * from './proposal-detail/types'
-
-// Phase 1 UX Improvements
-export { 
-  EquipmentCapacityProgress,
-  CompactCapacityProgress,
-  EquipmentCapacityOverview,
-  calculateUtilization
-} from './equipment-capacity-progress'
-export { 
-  TechnicalTermTooltip,
-  InlineTerm
-} from './technical-term-tooltip'
-
-// Type exports
-export type * from './types'
+// Types
+export type * from "./types";

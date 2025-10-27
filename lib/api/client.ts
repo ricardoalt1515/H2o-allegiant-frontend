@@ -1,248 +1,317 @@
 // Base API client configuration for FastAPI backend integration
 
-import { retryWithBackoff, isRetryableHttpError, isNetworkError } from '@/lib/utils/retry'
-import { logger } from '@/lib/utils/logger'
+import { API_TIMEOUT, RETRY } from "@/lib/constants/timings";
+import { logger } from "@/lib/utils/logger";
 
 // Read API_DISABLED from environment variable
 export const API_DISABLED =
-  process.env.NEXT_PUBLIC_DISABLE_API === '1' ||
-  process.env.NEXT_PUBLIC_DISABLE_API === 'true'
+	process.env.NEXT_PUBLIC_DISABLE_API === "1" ||
+	process.env.NEXT_PUBLIC_DISABLE_API === "true";
 
 // Validate API_BASE_URL is set when API is enabled
 const API_BASE_URL = (() => {
-  const url = process.env.NEXT_PUBLIC_API_BASE_URL
+	const url = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  if (!API_DISABLED && !url) {
-    const errorMsg = 'NEXT_PUBLIC_API_BASE_URL is not defined in environment variables'
-    logger.error(errorMsg, new Error(errorMsg), 'APIClient')
-    throw new Error('API configuration error: NEXT_PUBLIC_API_BASE_URL is required when API is enabled')
-  }
+	if (!(API_DISABLED || url)) {
+		const errorMsg =
+			"NEXT_PUBLIC_API_BASE_URL is not defined in environment variables";
+		logger.error(errorMsg, new Error(errorMsg), "APIClient");
+		throw new Error(
+			"API configuration error: NEXT_PUBLIC_API_BASE_URL is required when API is enabled",
+		);
+	}
 
-  return url || 'http://localhost:8000/api/v1'
-})()
+	return url || "http://localhost:8000/api/v1";
+})();
 
-type JsonLike = Record<string, unknown>
+type JsonLike = Record<string, unknown>;
 
 interface APIError {
-  message: string
-  code?: string
-  details?: JsonLike
+	message: string;
+	code?: string;
+	details?: JsonLike;
 }
 
 class APIClientError extends Error {
-  code?: string | undefined
-  details?: Record<string, any> | undefined
+	code?: string | undefined;
+	details?: Record<string, any> | undefined;
 
-  constructor(error: APIError) {
-    super(error.message)
-    this.name = 'APIClientError'
-    this.code = error.code
-    this.details = error.details
-  }
+	constructor(error: APIError) {
+		super(error.message);
+		this.name = "APIClientError";
+		this.code = error.code;
+		this.details = error.details;
+	}
 }
 
 interface RequestConfig {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
-  headers?: Record<string, string>
-  body?: BodyInit | JsonLike
-  timeout?: number
+	method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+	headers?: Record<string, string>;
+	body?: BodyInit | JsonLike;
+	timeout?: number;
 }
 
 class APIClient {
-  private baseURL: string
-  private defaultHeaders: Record<string, string>
-  private onUnauthorized?: () => void
+	private baseURL: string;
+	private defaultHeaders: Record<string, string>;
+	private onUnauthorized?: () => void;
 
-  constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL
-    this.defaultHeaders = {
-      'Content-Type': 'application/json',
-    }
-  }
+	constructor(baseURL: string = API_BASE_URL) {
+		this.baseURL = baseURL;
+		this.defaultHeaders = {
+			"Content-Type": "application/json",
+		};
+	}
 
-  // Set callback for 401 errors
-  setUnauthorizedHandler(handler: () => void) {
-    this.onUnauthorized = handler
-  }
+	// Set callback for 401 errors
+	setUnauthorizedHandler(handler: () => void) {
+		this.onUnauthorized = handler;
+	}
 
-  // Set authentication token
-  setAuthToken(token: string) {
-    this.defaultHeaders['Authorization'] = `Bearer ${token}`
-  }
+	// Set authentication token
+	setAuthToken(token: string) {
+		this.defaultHeaders.Authorization = `Bearer ${token}`;
+	}
 
-  // Remove authentication token
-  clearAuthToken() {
-    delete this.defaultHeaders['Authorization']
-  }
+	// Remove authentication token
+	clearAuthToken() {
+		delete this.defaultHeaders.Authorization;
+	}
 
-  // Generic request method with retry logic
-  async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-    if (API_DISABLED) {
-      throw new APIClientError({
-        message: 'API disabled in FE-only mode',
-        code: 'API_DISABLED'
-      })
-    }
+	// Generic request method with retry logic
+	async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
+		if (API_DISABLED) {
+			throw new APIClientError({
+				message: "API disabled in FE-only mode",
+				code: "API_DISABLED",
+			});
+		}
 
-    const {
-      method = 'GET',
-      headers = {},
-      body,
-      timeout = 30000
-    } = config
+		const {
+			method = "GET",
+			headers = {},
+			body,
+			timeout = API_TIMEOUT.DEFAULT,
+		} = config;
 
-    // Wrap the request in retry logic
-    return retryWithBackoff(
-      async () => {
-        const url = `${this.baseURL}${endpoint}`
+		// Simple retry logic with exponential backoff
+		let lastError: Error | undefined;
+		let delay: number = RETRY.INITIAL_DELAY;
 
-        const requestConfig: RequestInit = {
-          method,
-          headers: {
-            ...this.defaultHeaders,
-            ...headers
-          },
-          signal: AbortSignal.timeout(timeout)
-        }
+		for (let attempt = 0; attempt <= RETRY.MAX_ATTEMPTS; attempt++) {
+			try {
+				const url = `${this.baseURL}${endpoint}`;
 
-        const shouldAttachBody = body !== undefined && method !== 'GET'
+				const requestConfig: RequestInit = {
+					method,
+					headers: {
+						...this.defaultHeaders,
+						...headers,
+					},
+					signal: AbortSignal.timeout(timeout),
+				};
 
-        if (shouldAttachBody) {
-          if (body instanceof FormData || body instanceof URLSearchParams || typeof body === 'string' || body instanceof Blob) {
-            requestConfig.body = body
-          } else if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
-            requestConfig.body = body
-          } else if (typeof body === 'object' && body !== null) {
-            requestConfig.body = JSON.stringify(body)
-          }
-        }
+				const shouldAttachBody = body !== undefined && method !== "GET";
 
-        try {
-          const response = await fetch(url, requestConfig)
+				if (shouldAttachBody) {
+					if (
+						body instanceof FormData ||
+						body instanceof URLSearchParams ||
+						typeof body === "string" ||
+						body instanceof Blob
+					) {
+						requestConfig.body = body;
+					} else if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+						requestConfig.body = body;
+					} else if (typeof body === "object" && body !== null) {
+						requestConfig.body = JSON.stringify(body);
+					}
+				}
 
-          // Handle non-200 responses
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({
-              message: `HTTP ${response.status}: ${response.statusText}`
-            }))
+				const response = await fetch(url, requestConfig);
 
-            // Handle 401 Unauthorized globally
-            if (response.status === 401 && this.onUnauthorized) {
-              logger.warn('401 Unauthorized - Clearing session', 'APIClient')
-              this.onUnauthorized()
-            }
+				// Handle non-200 responses
+				if (!response.ok) {
+					const errorData = await response.json().catch(() => ({
+						message: `HTTP ${response.status}: ${response.statusText}`,
+					}));
 
-            throw new APIClientError({
-              message: errorData.message || `Request failed with status ${response.status}`,
-              code: errorData.code || `HTTP_${response.status}`,
-              details: errorData.details
-            })
-          }
+					// Handle 401 Unauthorized globally
+					if (response.status === 401 && this.onUnauthorized) {
+						logger.warn("401 Unauthorized - Clearing session", "APIClient");
+						this.onUnauthorized();
+					}
 
-          // Handle empty responses
-          const contentType = response.headers.get('content-type')
-          if (!contentType || !contentType.includes('application/json')) {
-            return null as T
-          }
+					throw new APIClientError({
+						message:
+							errorData.message ||
+							`Request failed with status ${response.status}`,
+						code: errorData.code || `HTTP_${response.status}`,
+						details: errorData.details,
+					});
+				}
 
-          const data = await response.json()
-          return data
-        } catch (error: unknown) {
-          if (error instanceof APIClientError) {
-            throw error
-          }
+				// Handle empty responses
+				const contentType = response.headers.get("content-type");
+				if (!contentType?.includes("application/json")) {
+					return null as T;
+				}
 
-          const message = error instanceof Error ? error.message : 'Network error occurred'
+				const data = await response.json();
+				return data;
+			} catch (error: unknown) {
+				lastError = error instanceof Error ? error : new Error(String(error));
 
-          throw new APIClientError({
-            message,
-            code: 'NETWORK_ERROR'
-          })
-        }
-      },
-      {
-        maxRetries: 2,
-        initialDelay: 1000,
-        shouldRetry: (error) => {
-          // Retry on network errors
-          if (isNetworkError(error)) {
-            return true
-          }
+				// Don't retry if this is the last attempt
+				if (attempt === RETRY.MAX_ATTEMPTS) {
+					break;
+				}
 
-          // Retry on specific HTTP errors
-          if (error instanceof APIClientError && error.code) {
-            const statusCode = parseInt(error.code.replace('HTTP_', '') || '0')
-            return isRetryableHttpError(statusCode)
-          }
+				// Check if we should retry this error
+				const shouldRetry = this.isRetryableError(error);
+				if (!shouldRetry) {
+					throw lastError;
+				}
 
-          return false
-        },
-        onRetry: (error, attempt, delay) => {
-          logger.warn(`Retrying request (attempt ${attempt}): ${endpoint}`, 'APIClient')
-        }
-      }
-    )
-  }
+				// Log retry attempt
+				logger.warn(
+					`Retrying request (attempt ${attempt + 1}): ${endpoint}`,
+					"APIClient",
+				);
 
-  // Convenience methods
-  async get<T>(endpoint: string, headers?: Record<string, string>): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET', ...(headers && { headers }) })
-  }
+				// Wait before retrying with exponential backoff
+				await new Promise((resolve) => setTimeout(resolve, delay));
+				delay = Math.min(delay * RETRY.BACKOFF_FACTOR, RETRY.MAX_DELAY);
+			}
+		}
 
-  async post<T>(endpoint: string, body?: BodyInit | JsonLike, headers?: Record<string, string>): Promise<T> {
-    return this.request<T>(endpoint, { method: 'POST', ...(body !== undefined && { body }), ...(headers && { headers }) })
-  }
+		// All retries failed
+		throw lastError || new Error("Request failed");
+	}
 
-  async put<T>(endpoint: string, body?: BodyInit | JsonLike, headers?: Record<string, string>): Promise<T> {
-    return this.request<T>(endpoint, { method: 'PUT', ...(body !== undefined && { body }), ...(headers && { headers }) })
-  }
+	// Helper to determine if an error is retryable
+	private isRetryableError(error: unknown): boolean {
+		if (error instanceof APIClientError && error.code) {
+			// Retry on network errors or specific HTTP status codes
+			const retryableStatuses = [408, 429, 500, 502, 503, 504];
+			const statusCode = Number.parseInt(
+				error.code.replace("HTTP_", "") || "0",
+				10,
+			);
+			return retryableStatuses.includes(statusCode);
+		}
 
-  async patch<T>(endpoint: string, body?: BodyInit | JsonLike, headers?: Record<string, string>): Promise<T> {
-    return this.request<T>(endpoint, { method: 'PATCH', ...(body !== undefined && { body }), ...(headers && { headers }) })
-  }
+		// Retry on network errors
+		if (error instanceof Error) {
+			const networkErrors = [
+				"network error",
+				"fetch failed",
+				"failed to fetch",
+				"ECONNREFUSED",
+				"ETIMEDOUT",
+			];
+			const errorMsg = error.message.toLowerCase();
+			return networkErrors.some((msg) => errorMsg.includes(msg));
+		}
 
-  async delete<T>(endpoint: string, headers?: Record<string, string>): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE', ...(headers && { headers }) })
-  }
+		return false;
+	}
 
-  // File upload helper
-  async uploadFile<T>(
-    endpoint: string,
-    file: File,
-    additionalData?: Record<string, string | number | boolean | undefined>
-  ): Promise<T> {
-    const formData = new FormData()
-    formData.append('file', file)
+	// Convenience methods
+	async get<T>(endpoint: string, headers?: Record<string, string>): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: "GET",
+			...(headers && { headers }),
+		});
+	}
 
-    if (additionalData) {
-      Object.entries(additionalData).forEach(([key, value]) => {
-        if (value === undefined) return
-        formData.append(key, typeof value === 'string' ? value : JSON.stringify(value))
-      })
-    }
+	async post<T>(
+		endpoint: string,
+		body?: BodyInit | JsonLike,
+		headers?: Record<string, string>,
+	): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: "POST",
+			...(body !== undefined && { body }),
+			...(headers && { headers }),
+		});
+	}
 
-    const headers = { ...this.defaultHeaders }
-    delete headers['Content-Type'] // Let browser set it for FormData
+	async put<T>(
+		endpoint: string,
+		body?: BodyInit | JsonLike,
+		headers?: Record<string, string>,
+	): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: "PUT",
+			...(body !== undefined && { body }),
+			...(headers && { headers }),
+		});
+	}
 
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: formData,
-      headers
-    })
-  }
+	async patch<T>(
+		endpoint: string,
+		body?: BodyInit | JsonLike,
+		headers?: Record<string, string>,
+	): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: "PATCH",
+			...(body !== undefined && { body }),
+			...(headers && { headers }),
+		});
+	}
 
-  // Health check
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.get('/health')
-  }
+	async delete<T>(
+		endpoint: string,
+		headers?: Record<string, string>,
+	): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: "DELETE",
+			...(headers && { headers }),
+		});
+	}
+
+	// File upload helper
+	async uploadFile<T>(
+		endpoint: string,
+		file: File,
+		additionalData?: Record<string, string | number | boolean | undefined>,
+	): Promise<T> {
+		const formData = new FormData();
+		formData.append("file", file);
+
+		if (additionalData) {
+			Object.entries(additionalData).forEach(([key, value]) => {
+				if (value === undefined) return;
+				formData.append(
+					key,
+					typeof value === "string" ? value : JSON.stringify(value),
+				);
+			});
+		}
+
+		const headers = { ...this.defaultHeaders };
+		delete headers["Content-Type"]; // Let browser set it for FormData with boundary
+
+		return this.request<T>(endpoint, {
+			method: "POST",
+			body: formData,
+			headers,
+		});
+	}
+
+	// Health check
+	async healthCheck(): Promise<{ status: string; timestamp: string }> {
+		return this.get("/health");
+	}
 }
 
 // Export singleton instance
-export const apiClient = new APIClient()
+export const apiClient = new APIClient();
 
 // Export types
-export { APIClientError }
-export type { APIError, RequestConfig }
+export { APIClientError };
+export type { APIError, RequestConfig };
 
 // Export class for custom instances
-export { APIClient }
+export { APIClient };

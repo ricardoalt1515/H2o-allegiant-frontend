@@ -3,7 +3,19 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Droplets, Search, Plus, Settings, LogOut, User, Menu, FolderOpen } from "lucide-react"
+import {
+	Droplets,
+	FileText,
+	FolderOpen,
+	Home,
+	LogOut,
+	Menu,
+	Plus,
+	Search,
+	Settings,
+	User,
+	Zap,
+} from "lucide-react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -34,12 +46,25 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { PRIMARY_NAV_LINKS, QUICK_ACTIONS } from "@/lib/navigation"
 import { routes } from "@/lib/routes"
 import { useEnsureProjectsLoaded, useProjects, useProjectLoading, useProjectStore } from "@/lib/stores"
 import { PremiumProjectWizard } from "@/components/features/dashboard"
 import { ThemeToggle } from "@/components/shared/common/theme-toggle"
 import { useAuth } from "@/lib/contexts"
+
+// Navigation config - inline (DRY: only used here, no duplication)
+const PRIMARY_NAV_LINKS = [
+	{ name: "Dashboard", href: "/dashboard", icon: Home, description: "View projects" },
+	{ name: "Projects", href: "/dashboard", icon: FolderOpen, description: "Manage projects" },
+	{ name: "Proposals", href: "/dashboard", icon: FileText, description: "View proposals" },
+	{ name: "Settings", href: "/dashboard", icon: Settings, description: "Settings" },
+]
+
+const QUICK_ACTIONS = [
+	{ name: "Create New Project", href: "/dashboard", icon: Zap, description: "Start new project" },
+	{ name: "Search Projects", href: "/dashboard", icon: FolderOpen, description: "Find projects" },
+	{ name: "Settings", href: "/dashboard", icon: Settings, description: "Configure app" },
+]
 
 export function NavBar() {
   const [searchOpen, setSearchOpen] = useState(false)
