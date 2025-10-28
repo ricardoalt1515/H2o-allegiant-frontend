@@ -21,7 +21,7 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
-import { capexChartConfig } from "@/lib/chart-config";
+import { capexChartConfig, opexChartConfig } from "@/lib/chart-config";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import type { Proposal } from "./types";
 
@@ -29,10 +29,58 @@ interface ProposalEconomicsProps {
 	proposal: Proposal;
 }
 
-// Helper: Format CAPEX data for chart
-const formatCapexData = (equipment: { capexUsd: number }[]) => {
-	const totalEquipment = equipment.reduce((sum, eq) => sum + eq.capexUsd, 0);
+/**
+ * Format CAPEX breakdown from backend data
+ * Falls back to calculated values if backend data not available
+ */
+const formatCapexData = (
+	capexBreakdown?: {
+		equipmentCost: number;
+		civilWorks: number;
+		installationPiping: number;
+		engineeringSupervision: number;
+		contingency?: number;
+	},
+	equipment?: { capexUsd: number }[],
+) => {
+	// Use real backend data if available
+	if (capexBreakdown) {
+		return [
+			{
+				name: "equipment",
+				label: "Equipment",
+				value: capexBreakdown.equipmentCost,
+			},
+			{
+				name: "civilWorks",
+				label: "Civil Works",
+				value: capexBreakdown.civilWorks,
+			},
+			{
+				name: "installation",
+				label: "Installation & Piping",
+				value: capexBreakdown.installationPiping,
+			},
+			{
+				name: "engineering",
+				label: "Engineering",
+				value: capexBreakdown.engineeringSupervision,
+			},
+			...(capexBreakdown.contingency
+				? [
+						{
+							name: "contingency",
+							label: "Contingency",
+							value: capexBreakdown.contingency,
+						},
+					]
+				: []),
+		];
+	}
 
+	// Fallback: calculate from equipment if backend data not available
+	const totalEquipment =
+		equipment?.reduce((sum, eq) => sum + eq.capexUsd, 0) || 0;
 	return [
 		{ name: "equipment", label: "Equipment", value: totalEquipment },
 		{ name: "civilWorks", label: "Civil Works", value: totalEquipment * 0.4 },
@@ -41,18 +89,59 @@ const formatCapexData = (equipment: { capexUsd: number }[]) => {
 			label: "Installation",
 			value: totalEquipment * 0.2,
 		},
-		{ name: "engineering", label: "Engineering", value: totalEquipment * 0.15 },
-		{ name: "contingency", label: "Contingency", value: totalEquipment * 0.15 },
+		{
+			name: "engineering",
+			label: "Engineering",
+			value: totalEquipment * 0.15,
+		},
+		{
+			name: "contingency",
+			label: "Contingency",
+			value: totalEquipment * 0.15,
+		},
+	];
+};
+
+/**
+ * Format OPEX breakdown from backend data
+ * Returns null if no backend data available
+ */
+const formatOpexData = (opexBreakdown?: {
+	electricalEnergy: number;
+	chemicals: number;
+	personnel: number;
+	maintenanceSpareParts: number;
+}) => {
+	if (!opexBreakdown) return null;
+
+	return [
+		{
+			name: "energy",
+			label: "Electrical Energy",
+			value: opexBreakdown.electricalEnergy,
+		},
+		{ name: "chemicals", label: "Chemicals", value: opexBreakdown.chemicals },
+		{ name: "personnel", label: "Personnel", value: opexBreakdown.personnel },
+		{
+			name: "maintenance",
+			label: "Maintenance",
+			value: opexBreakdown.maintenanceSpareParts,
+		},
 	];
 };
 
 export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 	const equipment = proposal.equipmentList || [];
 	const technicalData = proposal.aiMetadata?.technicalData;
+	const capexBreakdown = technicalData?.capexBreakdown;
+	const opexBreakdown = technicalData?.opexBreakdown;
 
-	// CAPEX Breakdown
-	const capexData = formatCapexData(equipment);
+	// CAPEX Breakdown - use real backend data or fallback to calculated
+	const capexData = formatCapexData(capexBreakdown, equipment);
 	const totalCapex = capexData.reduce((sum, item) => sum + item.value, 0);
+
+	// OPEX Breakdown - only show if backend provides data
+	const opexData = formatOpexData(opexBreakdown);
 
 	// OPEX Projection (5 years)
 	const opexProjection = Array.from({ length: 5 }, (_, i) => ({
@@ -124,8 +213,9 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 				)}
 			</div>
 
-			{/* CAPEX Breakdown */}
+			{/* CAPEX & OPEX Breakdown */}
 			<div className="grid md:grid-cols-2 gap-6">
+				{/* CAPEX Chart */}
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
@@ -199,36 +289,116 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 					</CardContent>
 				</Card>
 
-				{/* OPEX Projection */}
-				<Card>
-					<CardHeader>
-						<CardTitle>OPEX Projection (5 years)</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<ResponsiveContainer width="100%" height={300}>
-							<LineChart data={opexProjection}>
-								<CartesianGrid strokeDasharray="3 3" />
-								<XAxis dataKey="year" />
-								<YAxis />
-								<Tooltip
-									formatter={(value: number) =>
-										formatCurrency(value, {
-											locale: "en-US",
-											minimumFractionDigits: 0,
-											maximumFractionDigits: 0,
-										})
-									}
-								/>
-								<Line
-									type="monotone"
-									dataKey="opex"
-									stroke="hsl(var(--primary))"
-									strokeWidth={2}
-								/>
-							</LineChart>
-						</ResponsiveContainer>
-					</CardContent>
-				</Card>
+				{/* OPEX Breakdown or Projection */}
+				{opexData ? (
+					// Show OPEX breakdown if backend provides data
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<PieChartIcon className="h-5 w-5 text-chart-2" />
+								OPEX Breakdown
+							</CardTitle>
+							<p className="text-sm text-muted-foreground mt-1">
+								Annual operating cost distribution
+							</p>
+						</CardHeader>
+						<CardContent>
+							<ChartContainer config={opexChartConfig} className="h-[300px]">
+								<PieChart>
+									<ChartTooltip
+										content={
+											<ChartTooltipContent
+												formatter={(value) =>
+													formatCurrency(value as number, {
+														locale: "en-US",
+														minimumFractionDigits: 0,
+														maximumFractionDigits: 0,
+													})
+												}
+											/>
+										}
+									/>
+									<Pie
+										data={opexData}
+										dataKey="value"
+										nameKey="name"
+										cx="50%"
+										cy="50%"
+										innerRadius={60}
+										outerRadius={90}
+										strokeWidth={2}
+										stroke="hsl(var(--background))"
+									>
+										{opexData.map((entry) => (
+											<Cell
+												key={entry.name}
+												fill={`var(--color-${entry.name})`}
+											/>
+										))}
+									</Pie>
+									<ChartLegend content={<ChartLegendContent />} />
+									{/* Center label with total */}
+									<text
+										x="50%"
+										y="50%"
+										textAnchor="middle"
+										dominantBaseline="middle"
+										className="fill-foreground"
+									>
+										<tspan x="50%" dy="-0.5em" className="text-2xl font-bold">
+											{formatCurrency(proposal.opex, {
+												locale: "en-US",
+												minimumFractionDigits: 0,
+												maximumFractionDigits: 0,
+											})}
+										</tspan>
+										<tspan
+											x="50%"
+											dy="1.5em"
+											className="text-sm fill-muted-foreground"
+										>
+											Annual OPEX
+										</tspan>
+									</text>
+								</PieChart>
+							</ChartContainer>
+						</CardContent>
+					</Card>
+				) : (
+					// Fallback: Show 5-year projection if no breakdown data
+					<Card>
+						<CardHeader>
+							<CardTitle>OPEX Projection (5 years)</CardTitle>
+							<p className="text-sm text-muted-foreground mt-1">
+								Estimated annual costs with 3% inflation
+							</p>
+						</CardHeader>
+						<CardContent>
+							<ResponsiveContainer width="100%" height={300}>
+								<LineChart data={opexProjection}>
+									<CartesianGrid strokeDasharray="3 3" />
+									<XAxis dataKey="year" />
+									<YAxis />
+									<Tooltip
+										formatter={(value: number) =>
+											formatCurrency(value, {
+												locale: "en-US",
+												minimumFractionDigits: 0,
+												maximumFractionDigits: 0,
+											})
+										}
+									/>
+									<Line
+										type="monotone"
+										dataKey="opex"
+										stroke="hsl(var(--primary))"
+										strokeWidth={2}
+									/>
+								</LineChart>
+							</ResponsiveContainer>
+						</CardContent>
+					</Card>
+				)}
 			</div>
 
 			{/* Cost Details Table */}

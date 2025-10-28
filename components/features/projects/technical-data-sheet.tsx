@@ -3,6 +3,8 @@
 import {
 	BarChart3,
 	CheckCircle2,
+	Edit,
+	FileText,
 	Gauge,
 	History,
 	Layers,
@@ -18,6 +20,12 @@ import {
 	EngineeringDataTable,
 	ResizableDataLayout,
 } from "@/components/features/technical-data";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,8 +51,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Templates deprecated - will be re-implemented with modular system
 // import { TECHNICAL_TEMPLATES } from "@/lib/templates/technical-templates"
 import type { VersionSource } from "@/lib/project-types";
+import { routes } from "@/lib/routes";
 import {
 	useEnsureProjectsLoaded,
+	useProjectStore,
 	useProjects,
 	useTechnicalDataActions,
 	useTechnicalDataStore,
@@ -85,6 +95,11 @@ export function TechnicalDataSheet({ projectId }: TechnicalDataSheetProps) {
 	const versions = useTechnicalVersions(projectId);
 	const loading = useTechnicalDataStore((state) => state.loading);
 	const error = useTechnicalDataStore((state) => state.error);
+
+	// Get project timeline for activity tab
+	const currentProject = useProjectStore((state) => state.currentProject);
+	const timeline =
+		currentProject?.id === projectId ? currentProject.timeline : [];
 
 	const {
 		setActiveProject,
@@ -483,9 +498,9 @@ export function TechnicalDataSheet({ projectId }: TechnicalDataSheetProps) {
 						<BarChart3 className="h-4 w-4" />
 						Summary
 					</TabsTrigger>
-					<TabsTrigger value="versions" className="flex items-center gap-2">
+					<TabsTrigger value="activity" className="flex items-center gap-2">
 						<History className="h-4 w-4" />
-						Versions
+						Activity
 					</TabsTrigger>
 				</TabsList>
 
@@ -595,86 +610,115 @@ export function TechnicalDataSheet({ projectId }: TechnicalDataSheetProps) {
 					</Card>
 				</TabsContent>
 
-				<TabsContent value="versions" className="mt-6">
+				<TabsContent value="activity" className="mt-6">
 					<Card>
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
-								<Layers className="h-5 w-5 text-primary" />
-								History and Versions
+								<History className="h-5 w-5 text-primary" />
+								Project Activity
 							</CardTitle>
 							<CardDescription>
-								Review the evolution of the technical data sheet and collaborate
-								with your team with full traceability.
+								Complete timeline of all project activities and changes. Track
+								who did what and when for full audit trail.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<ScrollArea className="max-h-[420px] pr-3">
-								<div className="space-y-4">
-									{versions.length === 0 && (
-										<p className="text-sm text-muted-foreground">
-											No versions have been recorded for this technical data
-											sheet yet.
-										</p>
-									)}
+							{timeline.length === 0 ? (
+								<p className="text-sm text-muted-foreground">
+									No activity recorded yet. Actions will appear here
+									automatically.
+								</p>
+							) : (
+								<ScrollArea className="max-h-[600px] pr-3">
+									<div className="space-y-4">
+										{timeline.map((event, index) => {
+											// Get icon based on event type
+											const getEventIcon = () => {
+												switch (event.type) {
+													case "version":
+														return <Layers className="h-4 w-4" />;
+													case "proposal":
+														return <FileText className="h-4 w-4" />;
+													case "edit":
+														return <Edit className="h-4 w-4" />;
+													case "upload":
+														return <UploadCloud className="h-4 w-4" />;
+													case "assistant":
+														return <Sparkles className="h-4 w-4" />;
+													case "import":
+														return <RefreshCcw className="h-4 w-4" />;
+													default:
+														return <History className="h-4 w-4" />;
+												}
+											};
 
-									{versions.map((version) => (
-										<Card key={version.id} className="border-muted/60">
-											<CardContent className="flex flex-col gap-3 p-4">
-												<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-													<div>
-														<p className="font-medium">
-															{version.versionLabel}
+											// Get color based on event type
+											const getEventColor = () => {
+												switch (event.type) {
+													case "version":
+														return "text-blue-600 dark:text-blue-400";
+													case "proposal":
+														return "text-green-600 dark:text-green-400";
+													case "edit":
+														return "text-orange-600 dark:text-orange-400";
+													case "upload":
+														return "text-purple-600 dark:text-purple-400";
+													case "assistant":
+														return "text-yellow-600 dark:text-yellow-400";
+													case "import":
+														return "text-cyan-600 dark:text-cyan-400";
+													default:
+														return "text-muted-foreground";
+												}
+											};
+
+											const isLastItem = index === timeline.length - 1;
+
+											return (
+												<div key={event.id} className="relative flex gap-3">
+													{/* Timeline line */}
+													{!isLastItem && (
+														<div className="absolute left-[11px] top-8 bottom-0 w-px bg-border" />
+													)}
+
+													{/* Event icon */}
+													<div
+														className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-background ${getEventColor()}`}
+													>
+														{getEventIcon()}
+													</div>
+
+													{/* Event content */}
+													<div className="flex-1 space-y-1 pb-4">
+														<div className="flex items-center justify-between">
+															<p className="font-medium text-sm">
+																{event.title}
+															</p>
+															<p className="text-xs text-muted-foreground">
+																{new Date(event.timestamp).toLocaleString(
+																	"en-US",
+																	{
+																		month: "short",
+																		day: "numeric",
+																		hour: "2-digit",
+																		minute: "2-digit",
+																	},
+																)}
+															</p>
+														</div>
+														<p className="text-xs text-muted-foreground">
+															{event.description}
 														</p>
 														<p className="text-xs text-muted-foreground">
-															{new Date(version.createdAt).toLocaleString(
-																"en-US",
-															)}
-															{version.source === "import" && " · Import"}
-															{version.source === "ai" && " · AI"}
-															{version.source === "rollback" && " · Rollback"}
+															by {event.user}
 														</p>
 													</div>
-													<Badge variant="outline" className="text-xs">
-														{version.changes.length} changes
-													</Badge>
 												</div>
-												{version.notes && (
-													<p className="text-xs text-muted-foreground">
-														{version.notes}
-													</p>
-												)}
-												<div className="grid gap-2 text-xs">
-													{version.changes.slice(0, 4).map((change) => (
-														<div
-															key={change.id}
-															className="flex items-start justify-between gap-3 rounded-md bg-muted/50 p-2"
-														>
-															<div>
-																<p className="font-medium">{change.label}</p>
-																<p className="text-muted-foreground">
-																	{change.oldValue ?? "–"} →{" "}
-																	{change.newValue ?? "–"}
-																</p>
-															</div>
-															<Badge
-																variant="outline"
-																className="text-xs capitalize"
-															>
-																{change.changeType}
-															</Badge>
-														</div>
-													))}
-													{version.changes.length > 4 && (
-														<p className="text-[11px] text-muted-foreground">
-															+{version.changes.length - 4} additional changes
-														</p>
-													)}
-												</div>
-											</CardContent>
-										</Card>
-									))}
-								</div>
-							</ScrollArea>
+											);
+										})}
+									</div>
+								</ScrollArea>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>

@@ -8,7 +8,6 @@ import {
 	FileText,
 	Home,
 	MoreHorizontal,
-	Share,
 	Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -37,15 +36,20 @@ import {
 import { routes } from "@/lib/routes";
 import { useProjectActions, useTechnicalSections } from "@/lib/stores";
 import { overallCompletion } from "@/lib/technical-sheet-data";
+import { EditProjectDialog } from "./edit-project-dialog";
 
 interface Project {
 	id: string;
 	name: string;
 	client: string;
+	location: string;
 	status: string;
 	type: string;
 	progress: number;
 	updatedAt: string;
+	description?: string;
+	budget?: number;
+	scheduleSummary?: string;
 }
 
 interface ProjectHeaderProps {
@@ -63,6 +67,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 	const router = useRouter();
 	const { deleteProject } = useProjectActions();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	// ✅ Calculate progress dynamically from technical sections (same as body)
@@ -135,11 +140,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 					</div>
 
 					<div className="flex items-center space-x-2">
-						<Button variant="outline" size="sm">
-							<Share className="h-4 w-4 mr-2" />
-							Share
-						</Button>
-
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="outline" size="sm">
@@ -147,7 +147,12 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={() => {
+										// Small delay to ensure DropdownMenu closes before Dialog opens
+										setTimeout(() => setShowEditDialog(true), 0);
+									}}
+								>
 									<Edit className="mr-2 h-4 w-4" />
 									Edit Project
 								</DropdownMenuItem>
@@ -166,9 +171,9 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									className="text-destructive focus:text-destructive"
-									onSelect={(e) => {
-										e.preventDefault();
-										setShowDeleteDialog(true);
+									onSelect={() => {
+										// Small delay to ensure DropdownMenu closes before AlertDialog opens
+										setTimeout(() => setShowDeleteDialog(true), 0);
 									}}
 								>
 									<Trash2 className="mr-2 h-4 w-4" />
@@ -202,6 +207,12 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<EditProjectDialog
+				open={showEditDialog}
+				onOpenChange={setShowEditDialog}
+				project={project}
+			/>
 		</header>
 	);
 }

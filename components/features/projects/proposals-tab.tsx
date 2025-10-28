@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -32,7 +33,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { ProposalsAPI } from "@/lib/api/proposals";
-import { useToast } from "@/lib/hooks/use-toast";
 import type { ProjectDetail, ProposalVersion } from "@/lib/project-types";
 import { routes } from "@/lib/routes";
 import {
@@ -141,7 +141,6 @@ export function ProposalsTab({ project }: ProposalsTabProps) {
 		id: string;
 		title: string;
 	} | null>(null);
-	const { toast } = useToast();
 
 	const openDeleteDialog = (proposalId: string, proposalTitle: string) => {
 		setProposalToDelete({ id: proposalId, title: proposalTitle });
@@ -157,8 +156,7 @@ export function ProposalsTab({ project }: ProposalsTabProps) {
 		try {
 			await ProposalsAPI.deleteProposal(project.id, proposalToDelete.id);
 
-			toast({
-				title: "Proposal deleted",
+			toast.success("Proposal deleted", {
 				description: `"${proposalToDelete.title}" has been successfully deleted.`,
 			});
 
@@ -166,10 +164,8 @@ export function ProposalsTab({ project }: ProposalsTabProps) {
 			await loadProject(project.id);
 		} catch (error) {
 			console.error("Failed to delete proposal:", error);
-			toast({
-				title: "Deletion error",
+			toast.error("Deletion error", {
 				description: "Could not delete the proposal. Please try again.",
-				variant: "destructive",
 			});
 		} finally {
 			setDeletingProposalId(null);
@@ -184,7 +180,6 @@ export function ProposalsTab({ project }: ProposalsTabProps) {
 					projectId={project.id}
 					onProposalGenerated={() => {
 						setIsGenerating(false);
-						router.refresh();
 					}}
 					onGenerationStart={() => setIsGenerating(true)}
 					onGenerationEnd={() => setIsGenerating(false)}

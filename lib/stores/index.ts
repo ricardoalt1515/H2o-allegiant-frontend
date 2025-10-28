@@ -10,4 +10,5 @@ export type {
 	TimelineEvent,
 } from "../project-types";
 export * from "./project-store";
+export * from "./proposal-generation-store";
 export * from "./technical-data-store";

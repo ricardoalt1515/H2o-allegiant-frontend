@@ -89,6 +89,23 @@ export interface DesignParameters {
 	regulatoryMarginPercent?: number;
 }
 
+// CAPEX breakdown from backend (real data, not calculated)
+export interface CapexBreakdown {
+	equipmentCost: number;
+	civilWorks: number;
+	installationPiping: number;
+	engineeringSupervision: number;
+	contingency?: number;
+}
+
+// OPEX breakdown from backend (real data, not calculated)
+export interface OpexBreakdown {
+	electricalEnergy: number;
+	chemicals: number;
+	personnel: number;
+	maintenanceSpareParts: number;
+}
+
 export interface TechnicalData {
 	flowRateM3Day?: number; // Design flow rate from agent
 	implementationMonths?: number;
@@ -97,6 +114,8 @@ export interface TechnicalData {
 	roiPercent?: number;
 	requiredAreaM2?: number;
 	designParameters?: DesignParameters;
+	capexBreakdown?: CapexBreakdown;
+	opexBreakdown?: OpexBreakdown;
 }
 
 export interface OperationalData {

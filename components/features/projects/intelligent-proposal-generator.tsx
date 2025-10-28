@@ -11,37 +11,25 @@
 
 "use client";
 
-import {
-	AlertCircle,
-	Brain,
-	CheckCircle,
-	Cog,
-	FileText,
-	Loader2,
-	XCircle,
-	Zap,
-} from "lucide-react";
+import { AlertCircle, Brain, Loader2, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProposalGeneration } from "@/lib/hooks/use-proposal-generation";
 import type { ProjectDetail } from "@/lib/project-types";
-import { useCurrentProject } from "@/lib/stores";
+import { useCurrentProject, useLoadProjectAction } from "@/lib/stores";
+import { useProposalGenerationStore } from "@/lib/stores/proposal-generation-store";
 import { useTechnicalSummaryData } from "@/lib/stores/technical-data-store";
 import { logger } from "@/lib/utils/logger";
+import {
+	showProposalErrorToast,
+	showProposalProgressToast,
+	showProposalSuccessToast,
+} from "@/lib/utils/proposal-progress-toast";
 
 interface IntelligentProposalGeneratorProps {
 	projectId: string;
@@ -58,10 +46,17 @@ export function IntelligentProposalGeneratorComponent({
 }: IntelligentProposalGeneratorProps) {
 	const router = useRouter();
 	const storeProject = useCurrentProject();
+	const loadProject = useLoadProjectAction();
 	const { completion: completeness } = useTechnicalSummaryData(projectId);
 
+	// Global generation state for navbar badge
+	const { startGeneration, updateProgress, endGeneration } =
+		useProposalGenerationStore();
+
+	// Track start time for time estimation
+	const startTimeRef = useRef<number>(Date.now());
+
 	// State
-	const [showProgress, setShowProgress] = useState(false);
 	const [proposalType, setProposalType] = useState<
 		"Conceptual" | "Technical" | "Detailed"
 	>("Conceptual");
@@ -77,54 +72,58 @@ export function IntelligentProposalGeneratorComponent({
 	const canGenerate = completeness.percentage >= 70;
 
 	// Use proposal generation hook
-	const {
-		generate,
-		cancel,
-		progress,
-		currentStep,
-		isGenerating,
-		error,
-		reasoning,
-	} = useProposalGeneration({
-		projectId,
-		onComplete: async (proposalId) => {
-			toast.success("Proposal generated successfully!", {
-				description: "Loading proposal...",
-			});
+	const { generate, cancel, progress, isGenerating, reasoning } =
+		useProposalGeneration({
+			projectId,
+			onReloadProject: () => loadProject(projectId),
+			onComplete: async (proposalId) => {
+				// Update global state
+				endGeneration();
 
-			try {
-				// Reload project to get the new proposal in store
-				logger.debug("Reloading project to include new proposal", {
-					projectId,
+				// Show success toast with action
+				showProposalSuccessToast(proposalId, () => {
+					router.push(`/project/${projectId}/proposals/${proposalId}`);
 				});
-				await fetch(`/api/projects/${projectId}`, { cache: "no-store" });
-
-				// Wait a bit to ensure store updates
-				await new Promise((resolve) => setTimeout(resolve, 500));
 
 				onProposalGenerated?.(proposalId);
-				router.push(`/project/${projectId}/proposals/${proposalId}`);
-			} catch (error) {
-				logger.error(
-					"Error reloading project after proposal generation",
-					error,
-					"ProposalGenerator",
-				);
-				// Still navigate even if reload fails
-				router.push(`/project/${projectId}/proposals/${proposalId}`);
-			}
-		},
-		onError: (errorMsg) => {
-			toast.error("Error en la generación", {
-				description: errorMsg,
-			});
-			onGenerationEnd?.();
-		},
-		onProgress: (_progressValue, _step) => {
-			// Progress updates handled by hook state
-			onGenerationStart?.();
-		},
-	});
+				onGenerationEnd?.();
+			},
+			onError: (errorMsg) => {
+				// Update global state
+				endGeneration();
+
+				// Show error toast with retry option
+				showProposalErrorToast(errorMsg, () => {
+					generate({ proposalType });
+				});
+
+				onGenerationEnd?.();
+			},
+			onProgress: (progressValue, step) => {
+				// Calculate time estimate for badge
+				const elapsedMs = Date.now() - startTimeRef.current;
+				const progressRate = progressValue / elapsedMs;
+				const remainingProgress = 100 - progressValue;
+				const estimatedRemainingMs = remainingProgress / progressRate;
+				const estimatedMinutes = Math.ceil(estimatedRemainingMs / 60000);
+				const timeEstimate =
+					progressValue >= 10 && estimatedMinutes > 0
+						? `~${estimatedMinutes} min`
+						: null;
+
+				// Update global state for navbar badge
+				updateProgress(progressValue, step, timeEstimate);
+
+				// Update persistent toast with reasoning
+				showProposalProgressToast({
+					progress: progressValue,
+					currentStep: step,
+					startTime: startTimeRef.current,
+					reasoning,
+					onCancel: handleCancel,
+				});
+			},
+		});
 
 	/**
 	 * Handle start generation button click
@@ -138,22 +137,21 @@ export function IntelligentProposalGeneratorComponent({
 		});
 
 		if (!project) {
-			toast.error("Error", {
-				description:
-					"No se pudo cargar el proyecto. Intenta recargar la página.",
-			});
+			showProposalErrorToast("Could not load project. Please reload the page.");
 			return;
 		}
 
 		if (!canGenerate) {
-			toast.warning("Insufficient data", {
-				description: `Complete at least 70% of technical data (currently: ${completeness.percentage}%)`,
-			});
+			showProposalErrorToast(
+				`Complete at least 70% of technical data (currently: ${completeness.percentage}%)`,
+			);
 			return;
 		}
 
-		// Show progress dialog
-		setShowProgress(true);
+		// Update global state
+		startGeneration(projectId);
+		startTimeRef.current = Date.now();
+
 		onGenerationStart?.();
 
 		try {
@@ -181,9 +179,10 @@ export function IntelligentProposalGeneratorComponent({
 				error,
 				"ProposalGenerator",
 			);
-			toast.error("Error generating proposal", {
-				description: error instanceof Error ? error.message : "Unknown error",
-			});
+			endGeneration();
+			showProposalErrorToast(
+				error instanceof Error ? error.message : "Unknown error",
+			);
 			onGenerationEnd?.();
 		}
 	};
@@ -193,16 +192,9 @@ export function IntelligentProposalGeneratorComponent({
 	 */
 	const handleCancel = () => {
 		cancel();
-		setShowProgress(false);
+		endGeneration();
+		showProposalErrorToast("Generation cancelled by user");
 		onGenerationEnd?.();
-		toast.info("Generación cancelada");
-	};
-
-	/**
-	 * Handle retry after error
-	 */
-	const handleRetry = () => {
-		generate({ proposalType });
 	};
 
 	return (
@@ -298,124 +290,6 @@ export function IntelligentProposalGeneratorComponent({
 					</Button>
 				</CardContent>
 			</Card>
-
-			{/* Progress Dialog */}
-			<Dialog open={showProgress} onOpenChange={setShowProgress}>
-				<DialogContent className="max-w-2xl">
-					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2">
-							<Brain className="h-5 w-5 text-primary" />
-							Generating Proposal with AI
-						</DialogTitle>
-						<DialogDescription>
-							The AI agent is analyzing the technical data and generating a
-							professional proposal. This process may take 1-2 minutes.
-						</DialogDescription>
-					</DialogHeader>
-
-					<div className="space-y-6 py-4">
-						{/* Progress Bar */}
-						<div className="space-y-2">
-							<div className="flex items-center justify-between text-sm">
-								<span className="font-medium">{currentStep}</span>
-								<span className="text-muted-foreground">{progress}%</span>
-							</div>
-							<Progress value={progress} className="h-3" />
-						</div>
-
-						{/* Status Icons */}
-						<div className="flex items-center justify-center gap-8">
-							{[
-								{ icon: FileText, label: "Analizando", threshold: 20 },
-								{ icon: Cog, label: "Calculando", threshold: 50 },
-								{ icon: Brain, label: "Optimizando", threshold: 75 },
-								{ icon: CheckCircle, label: "Finalizando", threshold: 95 },
-							].map(({ icon: Icon, label, threshold }) => (
-								<div
-									key={label}
-									className={`flex flex-col items-center gap-2 transition-all duration-300 ${
-										progress >= threshold
-											? "text-primary scale-110"
-											: "text-muted-foreground opacity-50"
-									}`}
-								>
-									<Icon
-										className={`h-8 w-8 ${
-											progress >= threshold && progress < threshold + 25
-												? "animate-pulse"
-												: ""
-										}`}
-									/>
-									<span className="text-xs font-medium">{label}</span>
-								</div>
-							))}
-						</div>
-
-						{/* AI Reasoning Log */}
-						<div className="rounded-lg border bg-muted/50 p-4">
-							<p className="text-xs font-medium mb-2 text-muted-foreground">
-								Proceso del Agente IA:
-							</p>
-							<ScrollArea className="h-32">
-								<div className="space-y-1">
-									{reasoning.map((line, i) => (
-										<p
-											key={`reasoning-${i}-${line.slice(0, 20)}`}
-											className="text-xs text-muted-foreground"
-										>
-											{line}
-										</p>
-									))}
-								</div>
-							</ScrollArea>
-						</div>
-
-						{/* Error Display */}
-						{error && (
-							<Alert variant="destructive">
-								<XCircle className="h-4 w-4" />
-								<AlertDescription>
-									<p className="font-medium">Error en la generación:</p>
-									<p className="text-sm">{error}</p>
-								</AlertDescription>
-							</Alert>
-						)}
-
-						{/* Action Buttons */}
-						<div className="flex gap-2">
-							{error ? (
-								<>
-									<Button
-										variant="outline"
-										onClick={() => setShowProgress(false)}
-										className="flex-1"
-									>
-										Cerrar
-									</Button>
-									<Button onClick={handleRetry} className="flex-1">
-										Reintentar
-									</Button>
-								</>
-							) : isGenerating ? (
-								<Button
-									variant="outline"
-									onClick={handleCancel}
-									className="w-full"
-								>
-									Cancelar
-								</Button>
-							) : (
-								<Button
-									onClick={() => setShowProgress(false)}
-									className="w-full"
-								>
-									Cerrar
-								</Button>
-							)}
-						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
 		</>
 	);
 }

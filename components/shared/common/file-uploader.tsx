@@ -16,8 +16,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
 import { TIME_MS, UI_DELAYS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // Types

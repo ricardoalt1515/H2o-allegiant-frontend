@@ -23,13 +23,17 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	type ProposalGenerationRequest,
-	type ProposalJobStatus,
-	ProposalsAPI,
-	pollProposalStatus,
+import type {
+	ProposalGenerationRequest,
+	ProposalJobStatus,
 } from "@/lib/api/proposals";
+import { ProposalsAPI, pollProposalStatus } from "@/lib/api/proposals";
 import { logger } from "@/lib/utils/logger";
+import {
+	clearGenerationState,
+	saveGenerationState,
+	updatePersistedProgress,
+} from "@/lib/utils/proposal-generation-persistence";
 
 export interface UseProposalGenerationOptions {
 	/**
@@ -54,6 +58,11 @@ export interface UseProposalGenerationOptions {
 	 * Callback for progress updates
 	 */
 	onProgress?: (progress: number, currentStep: string) => void;
+
+	/**
+	 * Function to reload project data after proposal generation
+	 */
+	onReloadProject?: () => Promise<void>;
 
 	/**
 	 * Auto-start generation on mount (default: false)
@@ -116,6 +125,7 @@ export function useProposalGeneration(
 		onComplete,
 		onError,
 		onProgress,
+		onReloadProject,
 		autoGenerate = false,
 		defaultProposalType = "Conceptual",
 	} = options;
@@ -183,6 +193,15 @@ export function useProposalGeneration(
 					"useProposalGeneration",
 				);
 
+				// Save to localStorage for recovery
+				saveGenerationState({
+					projectId,
+					jobId: initialStatus.jobId,
+					startTime: Date.now(),
+					lastProgress: 0,
+					proposalType: request.proposalType,
+				});
+
 				// Update state even if component unmounted (polling will continue in background)
 				setStatus(initialStatus);
 				setCurrentStep(initialStatus.currentStep);
@@ -202,7 +221,7 @@ export function useProposalGeneration(
 				);
 				await pollProposalStatus(initialStatus.jobId, {
 					intervalMs: 2500,
-					maxDurationMs: 600000, // 10 minutes (AI generation can take 5-7 min)
+					maxDurationMs: 900000, // 15 minutes (AI generation can take 6-8 min with new prompt)
 
 					onProgress: (jobStatus) => {
 						// Continue updating state even if component unmounted
@@ -210,6 +229,9 @@ export function useProposalGeneration(
 						setStatus(jobStatus);
 						setProgress(jobStatus.progress);
 						setCurrentStep(jobStatus.currentStep);
+
+						// Update persisted progress
+						updatePersistedProgress(jobStatus.progress);
 
 						// Add reasoning based on progress
 						if (jobStatus.progress >= 20 && jobStatus.progress < 40) {
@@ -242,7 +264,7 @@ export function useProposalGeneration(
 						onProgress?.(jobStatus.progress, jobStatus.currentStep);
 					},
 
-					onComplete: (result) => {
+					onComplete: async (result) => {
 						// Complete even if component unmounted
 						setIsGenerating(false);
 						setProgress(100);
@@ -251,6 +273,21 @@ export function useProposalGeneration(
 							...prev,
 							"✅ Proposal generated successfully!",
 						]);
+
+						// Clear persisted state on success
+						clearGenerationState();
+
+						// Reload project data to show new proposal
+						if (onReloadProject) {
+							try {
+								await onReloadProject();
+							} catch (error) {
+								logger.error(
+									"Failed to reload project after proposal generation",
+									error,
+								);
+							}
+						}
 
 						// Notify parent
 						if (result) {
@@ -267,6 +304,9 @@ export function useProposalGeneration(
 							`❌ Generation failed: ${errorMsg}`,
 						]);
 
+						// Clear persisted state on error
+						clearGenerationState();
+
 						// Notify parent
 						onError?.(errorMsg);
 					},
@@ -281,10 +321,14 @@ export function useProposalGeneration(
 				);
 				setError(errorMessage);
 				setIsGenerating(false);
+
+				// Clear persisted state on exception
+				clearGenerationState();
+
 				onError?.(errorMessage);
 			}
 		},
-		[projectId, onComplete, onError, onProgress],
+		[projectId, onComplete, onError, onProgress, onReloadProject],
 	);
 
 	/**
@@ -295,6 +339,9 @@ export function useProposalGeneration(
 		setIsGenerating(false);
 		setCurrentStep("Cancelled by user");
 		setReasoning((prev) => [...prev, "🛑 Generation cancelled"]);
+
+		// Clear persisted state on cancel
+		clearGenerationState();
 	}, []);
 
 	// Auto-generate on mount if enabled

@@ -24,6 +24,12 @@ export const CHART_COLORS = {
 	engineering: "hsl(40, 90%, 55%)", // Gold
 	contingency: "hsl(0, 75%, 60%)", // Red
 
+	// OPEX colors
+	energy: "hsl(45, 93%, 47%)", // Yellow/Gold
+	chemicals: "hsl(262, 83%, 58%)", // Purple
+	personnel: "hsl(173, 58%, 39%)", // Teal
+	maintenance: "hsl(24, 95%, 53%)", // Orange
+
 	// AI Confidence colors
 	high: "hsl(142, 76%, 36%)", // Success green
 	medium: "hsl(48, 96%, 53%)", // Warning yellow
@@ -78,6 +84,29 @@ export const capexChartConfig = {
 	contingency: {
 		label: "Contingency",
 		color: CHART_COLORS.contingency,
+	},
+} satisfies ChartConfig;
+
+/**
+ * Economics OPEX Chart Config
+ * Used in: proposal-economics.tsx
+ */
+export const opexChartConfig = {
+	energy: {
+		label: "Electrical Energy",
+		color: CHART_COLORS.energy,
+	},
+	chemicals: {
+		label: "Chemicals",
+		color: CHART_COLORS.chemicals,
+	},
+	personnel: {
+		label: "Personnel",
+		color: CHART_COLORS.personnel,
+	},
+	maintenance: {
+		label: "Maintenance",
+		color: CHART_COLORS.maintenance,
 	},
 } satisfies ChartConfig;
 

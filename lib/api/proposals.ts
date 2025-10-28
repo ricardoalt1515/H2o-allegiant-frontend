@@ -327,7 +327,7 @@ export async function pollProposalStatus(
 ): Promise<ProposalJobStatus> {
 	const {
 		intervalMs = 2500,
-		maxDurationMs = 600000, // 10 minutes (AI generation can take 5-7 min)
+		maxDurationMs = 900000, // 15 minutes (AI generation can take 6-8 min with new prompt)
 		signal,
 		onProgress,
 		onComplete,

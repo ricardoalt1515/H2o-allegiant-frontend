@@ -1,5 +1,6 @@
 // Projects feature exports
 
+export { EditProjectDialog } from "./edit-project-dialog";
 export { FilesTabEnhanced } from "./files-tab-enhanced";
 export {
 	IntelligentProposalGeneratorComponent,

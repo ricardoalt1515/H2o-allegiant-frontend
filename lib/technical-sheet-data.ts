@@ -31,7 +31,10 @@ function rehydrateSingleField(field: TableField): TableField {
 
 	// Missing param = custom field, keep as-is
 	if (!param) {
-		logger.warn(`Field "${field.id}" not in parameter library`, "TechnicalSheet");
+		logger.warn(
+			`Field "${field.id}" not in parameter library`,
+			"TechnicalSheet",
+		);
 		return field;
 	}
 

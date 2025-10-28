@@ -89,30 +89,30 @@
    * PROPOSAL PAGE SEMANTIC COLORS
    * Colores con significado para proposal page
    * ============================================ */
-  
+
   /* Estados de Cumplimiento */
   --compliance-pass: var(--success);
   --compliance-fail: var(--destructive);
   --compliance-partial: var(--warning);
-  
+
   /* Niveles de Confianza AI */
   --confidence-high: var(--success);
   --confidence-medium: var(--warning);
   --confidence-low: var(--destructive);
-  
+
   /* Performance vs Benchmark */
   --performance-excellent: var(--success);
   --performance-good: var(--primary);
   --performance-average: var(--warning);
   --performance-poor: var(--destructive);
-  
+
   /* Etapas de Tratamiento (tema agua) */
   --treatment-primary: oklch(0.50 0.20 240);      /* Azul profundo */
   --treatment-secondary: oklch(0.55 0.18 200);    /* Azul medio */
   --treatment-tertiary: oklch(0.62 0.15 170);     /* Teal/cyan */
   --treatment-polishing: oklch(0.68 0.12 150);    /* Verde agua */
   --treatment-auxiliary: oklch(0.45 0.10 260);    /* Violeta */
-  
+
   /* Data Visualization (agua) */
   --data-influent: oklch(0.45 0.15 25);           /* Agua sucia (marrón) */
   --data-effluent: oklch(0.70 0.14 180);          /* Agua limpia (azul) */
@@ -192,16 +192,16 @@
   /* ============================================
    * PROPOSAL PAGE DARK MODE ADJUSTMENTS
    * ============================================ */
-  
+
   /* Estados adaptan automáticamente vía var(--success), etc */
-  
+
   /* Solo ajustar etapas de tratamiento para mejor contraste */
   --treatment-primary: oklch(0.60 0.18 240);
   --treatment-secondary: oklch(0.65 0.16 200);
   --treatment-tertiary: oklch(0.70 0.14 170);
   --treatment-polishing: oklch(0.75 0.12 150);
   --treatment-auxiliary: oklch(0.58 0.10 260);
-  
+
   /* Data visualization con mejor contraste */
   --data-influent: oklch(0.55 0.14 25);
   --data-effluent: oklch(0.75 0.13 180);
@@ -302,6 +302,9 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* Smooth font rendering - Critical for modern UI */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Motion Utilities */
@@ -984,6 +987,47 @@ body {
 }
 
 @layer components {
+  /* ============================================================================
+   * CONTAINER SYSTEM - Consistent max-widths and padding
+   * ============================================================================ */
+
+  /* Full-width page container - For main page layouts */
+  .container-page {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
+  }
+
+  /* Content container - For most content sections */
+  .container-content {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+
+  /* Narrow container - For text-heavy content */
+  .container-narrow {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .container-page,
+    .container-content,
+    .container-narrow {
+      padding-left: var(--space-sm);
+      padding-right: var(--space-sm);
+    }
+  }
+
   .aqua-page {
     position: relative;
     isolation: isolate;
