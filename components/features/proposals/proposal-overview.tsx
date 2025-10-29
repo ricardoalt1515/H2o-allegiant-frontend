@@ -51,7 +51,7 @@ export function ProposalOverview({ proposal }: ProposalOverviewProps) {
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 0,
 						})}
-						subtitle={`ROI: ${technicalData?.roiPercent ? formatNumber(technicalData.roiPercent) + "%" : "N/A"}`}
+						subtitle={`ROI: ${technicalData?.roiPercent ? `${formatNumber(technicalData.roiPercent)}%` : "N/A"}`}
 						variant="primary"
 					/>
 

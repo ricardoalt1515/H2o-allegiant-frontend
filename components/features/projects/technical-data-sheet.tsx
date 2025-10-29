@@ -20,12 +20,6 @@ import {
 	EngineeringDataTable,
 	ResizableDataLayout,
 } from "@/components/features/technical-data";
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,7 +45,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Templates deprecated - will be re-implemented with modular system
 // import { TECHNICAL_TEMPLATES } from "@/lib/templates/technical-templates"
 import type { VersionSource } from "@/lib/project-types";
-import { routes } from "@/lib/routes";
 import {
 	useEnsureProjectsLoaded,
 	useProjectStore,
@@ -92,7 +85,7 @@ export function TechnicalDataSheet({ projectId }: TechnicalDataSheetProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const sections = useTechnicalSections(projectId);
-	const versions = useTechnicalVersions(projectId);
+	const _versions = useTechnicalVersions(projectId);
 	const loading = useTechnicalDataStore((state) => state.loading);
 	const error = useTechnicalDataStore((state) => state.error);
 

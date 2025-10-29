@@ -427,5 +427,5 @@ export const useEnsureProjectsLoaded = () => {
 		}
 		// loadProjects is stable, no need in deps
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [loading, projectsCount, error]);
+	}, [loading, projectsCount, error, loadProjects]);
 };

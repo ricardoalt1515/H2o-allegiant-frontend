@@ -148,30 +148,30 @@ export function QuickActionButton({
 		"calculate-capex": {
 			variant: "calculate" as const,
 			icon: "calculate" as const,
-			children: "Calcular CAPEX",
+			children: "Calculate CAPEX",
 			estimatedTime: "15s",
 		},
 		"generate-proposal": {
 			variant: "generate" as const,
 			icon: "generate" as const,
-			children: "Generar Propuesta",
+			children: "Generte proposal",
 			estimatedTime: "2-3min",
 		},
 		"validate-parameters": {
 			variant: "technical" as const,
 			icon: "check" as const,
-			children: "Validar Parámetros",
+			children: "Validate parameters",
 			estimatedTime: "5s",
 		},
 		"export-pdf": {
 			variant: "outline" as const,
 			icon: "technical" as const,
-			children: "Exportar PDF",
+			children: "PDF export",
 		},
 		"quick-start": {
 			variant: "quick" as const,
 			icon: "play" as const,
-			children: "Inicio Rápido",
+			children: "Quick start",
 			estimatedTime: "30s",
 		},
 	};

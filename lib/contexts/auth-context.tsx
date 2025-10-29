@@ -27,6 +27,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = ["/", "/login", "/register"];
 
+/**
+ * 🔒 SECURITY: Clear all user-specific localStorage data
+ * This prevents data leakage between different users on the same browser
+ */
+function clearUserData() {
+	localStorage.removeItem("h2o-project-store");
+	localStorage.removeItem("h2o-technical-data-store");
+	localStorage.removeItem("active-proposal-generation");
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -40,8 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			logger.warn("Global 401 handler: Clearing session", "AuthContext");
 			authAPI.logout();
 			setUser(null);
-			localStorage.removeItem("h2o-project-store");
-			localStorage.removeItem("h2o-technical-data-store");
+			clearUserData();
 
 			// ✅ FIX: Only redirect if NOT already on login page (prevents loop)
 			if (window.location.pathname !== "/login") {
@@ -103,6 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const login = async (email: string, password: string) => {
 		try {
 			setIsLoading(true);
+
+			// 🔒 SECURITY FIX: Clear ALL user data before login
+			// This prevents previous user's data from persisting in localStorage
+			clearUserData();
+
 			const response = await authAPI.login({ email, password });
 			setUser(response.user);
 			toast.success("Login successful");
@@ -125,6 +139,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	) => {
 		try {
 			setIsLoading(true);
+
+			// 🔒 SECURITY FIX: Clear ALL user data before registration
+			// This prevents previous user's data from persisting in localStorage
+			clearUserData();
+
 			const response = await authAPI.register({
 				email,
 				password,
@@ -145,10 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const logout = () => {
 		authAPI.logout();
 		setUser(null);
-
-		// Clear all persisted stores to avoid residual data
-		localStorage.removeItem("h2o-project-store");
-		localStorage.removeItem("h2o-technical-data-store");
+		clearUserData();
 
 		toast.success("Session closed");
 		router.push("/login");

@@ -133,7 +133,7 @@ export const saveTechnicalSheetData = async (
 			`technical-sheet-data:${projectId}`,
 			JSON.stringify(sections),
 		);
-	} catch (error) {
+	} catch (_error) {
 		logger.warn("localStorage save failed", "TechnicalSheet");
 	}
 
