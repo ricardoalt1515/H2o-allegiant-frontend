@@ -40,10 +40,12 @@ export function ProposalAISection({ proposal }: ProposalAISectionProps) {
 		Low: 40,
 	} as const;
 
-	const confidence = aiMetadata.confidenceLevel || "Medium";
-	const provenCases = aiMetadata.provenCases || [];
-	const technologyJustification = aiMetadata.technologyJustification || [];
-	const alternatives = aiMetadata.alternatives || [];
+	const confidence = aiMetadata.proposal.confidenceLevel || "Medium";
+	const provenCases = aiMetadata.transparency.provenCases || [];
+	
+	// Technology selection from technical data
+	const selectedTechnologies = aiMetadata.proposal.technicalData.technologySelection?.selectedTechnologies || [];
+	const rejectedAlternatives = aiMetadata.proposal.technicalData.technologySelection?.rejectedAlternatives || [];
 
 	// Helper: Calculate confidence score from level
 	const getConfidenceScore = (level: typeof confidence): number => {
@@ -174,8 +176,8 @@ export function ProposalAISection({ proposal }: ProposalAISectionProps) {
 				</CardContent>
 			</Card>
 
-			{/* Technology Justification */}
-			{technologyJustification.length > 0 && (
+			{/* Technology Selection Reasoning */}
+			{selectedTechnologies.length > 0 && (
 				<Card className="hover:shadow-md transition-shadow">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
@@ -185,19 +187,19 @@ export function ProposalAISection({ proposal }: ProposalAISectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-4">
-							{technologyJustification.map((item) => (
+							{selectedTechnologies.map((tech) => (
 								<div
-									key={`${item.stage}-${item.technology}`}
+									key={`${tech.stage}-${tech.technology}`}
 									className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/50 hover:border-primary/50 transition-colors"
 								>
 									<div className="flex items-center gap-2">
 										<Badge variant="outline" className="font-medium">
-											{item.stage}
+											{tech.stage}
 										</Badge>
-										<span className="font-semibold">{item.technology}</span>
+										<span className="font-semibold">{tech.technology}</span>
 									</div>
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										{item.justification}
+										{tech.justification}
 									</p>
 								</div>
 							))}
@@ -207,7 +209,7 @@ export function ProposalAISection({ proposal }: ProposalAISectionProps) {
 			)}
 
 			{/* Alternatives Evaluated */}
-			{alternatives.length > 0 && (
+			{rejectedAlternatives.length > 0 && (
 				<Card className="hover:shadow-md transition-shadow">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
@@ -220,19 +222,19 @@ export function ProposalAISection({ proposal }: ProposalAISectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-3">
-							{alternatives.map((alt) => (
+							{rejectedAlternatives.map((alternative) => (
 								<div
-									key={alt.technology}
+									key={alternative.technology}
 									className="p-3 rounded-lg bg-muted/20 border border-border"
 								>
 									<div className="flex items-start gap-3">
 										<XCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
 										<div className="flex-1">
 											<p className="font-medium text-sm mb-1">
-												{alt.technology}
+												{alternative.technology}
 											</p>
 											<p className="text-sm text-muted-foreground">
-												{alt.reasonRejected}
+												{alternative.reasonRejected}
 											</p>
 										</div>
 									</div>

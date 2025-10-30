@@ -18,13 +18,13 @@ interface ProposalOverviewProps {
 }
 
 export function ProposalOverview({ proposal }: ProposalOverviewProps) {
-	const technicalData = proposal.aiMetadata?.technicalData;
-	const problemAnalysis = proposal.aiMetadata?.problemAnalysis;
+	const technicalData = proposal.aiMetadata.proposal.technicalData;
+	const equipment = technicalData.mainEquipment || [];
+	const treatmentEfficiency = technicalData.treatmentEfficiency;
 
 	// Calculate total stages from equipment
-	const stages = new Set(proposal.equipmentList?.map((eq) => eq.stage) || [])
-		.size;
-	const hasCompliance = proposal.treatmentEfficiency?.overallCompliance;
+	const stages = new Set(equipment.map((eq) => eq.stage)).size;
+	const hasCompliance = treatmentEfficiency?.overallCompliance;
 
 	return (
 		<div className="space-y-8">
@@ -34,10 +34,7 @@ export function ProposalOverview({ proposal }: ProposalOverviewProps) {
 					<h1 className="text-4xl font-bold mb-2">{proposal.title}</h1>
 					<p className="text-xl text-muted-foreground">
 						Design Flow:{" "}
-						{technicalData?.flowRateM3Day ||
-							proposal.operationalData?.flowRateM3Day ||
-							"N/A"}{" "}
-						m³/day
+						{technicalData?.designFlowM3Day || "N/A"} m³/day
 					</p>
 				</div>
 
@@ -89,46 +86,7 @@ export function ProposalOverview({ proposal }: ProposalOverviewProps) {
 				</div>
 			</div>
 
-			{/* Problem → Solution Hero - Glass morphism effect */}
-			{problemAnalysis && (
-				<Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background/50 to-primary/5 backdrop-blur-sm shadow-xl">
-					<CardContent className="p-6">
-						<div className="grid md:grid-cols-3 gap-6 items-center">
-							{/* Problem */}
-							<div className="space-y-2">
-								<Badge variant="destructive">Problem</Badge>
-								<h3 className="font-semibold">Current Situation</h3>
-								<ul className="text-sm text-muted-foreground space-y-1">
-									{problemAnalysis.conditionsRestrictions
-										?.slice(0, 3)
-										.map((restriction) => (
-											<li key={restriction}>• {restriction}</li>
-										))}
-								</ul>
-							</div>
-
-							{/* Arrow */}
-							<div className="flex justify-center">
-								<ArrowRight className="h-8 w-8 text-primary" />
-							</div>
-
-							{/* Solution */}
-							<div className="space-y-2">
-								<Badge variant="default">Solution</Badge>
-								<h3 className="font-semibold">Proposed System</h3>
-								<ul className="text-sm text-muted-foreground space-y-1">
-									{problemAnalysis.qualityObjectives?.slice(0, 3).map((obj) => (
-										<li key={obj} className="flex items-start gap-1">
-											<CheckCircle className="h-4 w-4 text-[var(--compliance-pass)] mt-0.5 flex-shrink-0" />
-											<span>{obj}</span>
-										</li>
-									))}
-								</ul>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-			)}
+			{/* Executive Summary - Data-driven */}
 
 			{/* Additional Metrics - Implementation timeline and payback */}
 			{(technicalData?.implementationMonths || technicalData?.paybackYears) && (
@@ -155,19 +113,18 @@ export function ProposalOverview({ proposal }: ProposalOverviewProps) {
 				</div>
 			)}
 
-			{/* Executive Summary - Restructured for scannability */}
-			{proposal.snapshot?.executiveSummary && (
+			{/* Executive Summary */}
+			{proposal.executiveSummary && (
 				<Card>
 					<CardHeader>
 						<CardTitle>Executive Summary</CardTitle>
 						<p className="text-sm text-muted-foreground mt-1">
-							Key highlights and project overview
+							Key highlights and recommendations
 						</p>
 					</CardHeader>
 					<CardContent>
-						{/* Full text - keeping it simple and data-driven */}
 						<p className="text-sm text-muted-foreground leading-relaxed">
-							{proposal.snapshot.executiveSummary}
+							{proposal.executiveSummary}
 						</p>
 					</CardContent>
 				</Card>

@@ -11,14 +11,14 @@ export interface WaterParameter {
 }
 
 export interface InfluentCharacteristics {
-	flowRateM3Day: number;
-	parameters: WaterParameter[];
+	parameters: WaterParameter[]; // Flow is now in TechnicalData
 }
 
-export interface ProblemAnalysis {
+export interface ProjectRequirements {
 	influentCharacteristics: InfluentCharacteristics;
-	qualityObjectives: string[];
-	conditionsRestrictions: string[];
+	dischargeRequirements: string[]; // Renamed from qualityObjectives
+	businessObjectives: string[]; // Renamed from projectObjectives
+	siteConstraints: string[]; // Renamed from conditionsRestrictions
 }
 
 export interface EquipmentSpec {
@@ -61,24 +61,45 @@ export interface ProvenCase {
 	similarityScore?: number;
 }
 
-export interface TechnologyJustification {
+export interface SelectedTechnology {
 	stage: string;
 	technology: string;
 	justification: string;
 }
 
-export interface Alternative {
+export interface RejectedAlternative {
 	technology: string;
 	reasonRejected: string;
+	stage?: string; // Optional
+}
+
+export interface TechnologySelection {
+	selectedTechnologies: SelectedTechnology[];
+	rejectedAlternatives: RejectedAlternative[];
 }
 
 export interface AIMetadata {
-	confidenceLevel: "High" | "Medium" | "Low";
-	provenCases: ProvenCase[];
-	assumptions: string[];
-	alternatives: Alternative[];
-	technologyJustification: TechnologyJustification[];
-	problemAnalysis?: ProblemAnalysis;
+	proposal: {
+		technicalData: TechnicalData & {
+			mainEquipment?: EquipmentSpec[];
+			treatmentEfficiency?: TreatmentEfficiency;
+			capexBreakdown?: CapexBreakdown;
+			opexBreakdown?: OpexBreakdown;
+			operationalData?: OperationalData;
+			technologySelection?: TechnologySelection;
+			assumptions?: string[];
+		};
+		markdownContent: string;
+		confidenceLevel: "High" | "Medium" | "Low";
+		recommendations?: string[];
+	};
+	transparency: {
+		provenCases: ProvenCase[];
+		userSector?: string;
+		clientMetadata?: Record<string, any>;
+		generatedAt: string;
+		generationTimeSeconds: number;
+	};
 }
 
 export interface DesignParameters {
@@ -107,22 +128,23 @@ export interface OpexBreakdown {
 }
 
 export interface TechnicalData {
-	flowRateM3Day?: number; // Design flow rate from agent
+	designFlowM3Day?: number; // ✅ RENAMED from flowRateM3Day
 	implementationMonths?: number;
 	paybackYears?: number;
 	annualSavingsUsd?: number;
 	roiPercent?: number;
-	requiredAreaM2?: number;
 	designParameters?: DesignParameters;
-	capexBreakdown?: CapexBreakdown;
-	opexBreakdown?: OpexBreakdown;
+	capexBreakdown?: CapexBreakdown; // ✅ Now properly mapped from backend
+	opexBreakdown?: OpexBreakdown; // ✅ Now properly mapped from backend
+	technologySelection?: TechnologySelection; // ✅ From backend technical_data
+	assumptions?: string[]; // ✅ From backend technical_data
 }
 
 export interface OperationalData {
-	flowRateM3Day?: number; // May include recirculation
 	requiredAreaM2?: number;
 	sludgeProductionKgDay?: number;
 	energyConsumptionKwhM3?: number;
+	// Note: Flow is in TechnicalData.designFlowM3Day (single source of truth)
 }
 
 export interface Project {
@@ -136,20 +158,18 @@ export interface Proposal {
 	title: string;
 	version: string;
 	status: "Draft" | "Current" | "Archived";
-	type: "Conceptual" | "Technical" | "Detailed";
+	proposalType: "Conceptual" | "Technical" | "Detailed";
 	author: string;
 	createdAt: string;
 	capex: number;
 	opex: number;
-	equipmentList?: EquipmentSpec[];
-	treatmentEfficiency?: TreatmentEfficiency;
-	aiMetadata?: AIMetadata & {
-		technicalData?: TechnicalData;
-	};
-	operationalData?: OperationalData;
-	snapshot?: {
-		executiveSummary?: string;
-	};
+	executiveSummary: string;
+	technicalApproach: string;
+	
+	// Single source of truth - all data here
+	aiMetadata: AIMetadata;
+	
+	pdfPath?: string;
 }
 
 export interface ProposalDetailProps {

@@ -25,7 +25,8 @@ interface ProposalTechnicalProps {
 }
 
 export function ProposalTechnical({ proposal }: ProposalTechnicalProps) {
-	const equipment = proposal.equipmentList || [];
+	const technicalData = proposal.aiMetadata.proposal.technicalData;
+	const equipment = technicalData.mainEquipment || [];
 
 	// Group equipment by stage for vertical flow
 	const equipmentByStage = equipment.reduce(

@@ -42,23 +42,13 @@ export function ProposalParameters({
 			{/* Operational Dashboard - Simple metrics grid */}
 			{operationalData && (
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-					{operationalData.flowRateM3Day && (
-						<MetricCard
-							icon={Droplet}
-							label="Flow Rate"
-							value={`${formatNumber(operationalData.flowRateM3Day)} m³/d`}
-							subtitle="Including recirculation"
-							variant="primary"
-						/>
-					)}
-
 					{operationalData.requiredAreaM2 && (
 						<MetricCard
 							icon={Gauge}
 							label="Footprint"
 							value={`${formatNumber(operationalData.requiredAreaM2)} m²`}
 							subtitle="Required area"
-							variant="chart-2"
+							variant="primary"
 						/>
 					)}
 

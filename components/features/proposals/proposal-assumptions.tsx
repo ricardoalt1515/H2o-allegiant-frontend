@@ -11,9 +11,10 @@ interface ProposalAssumptionsProps {
 }
 
 export function ProposalAssumptions({ proposal }: ProposalAssumptionsProps) {
-	const assumptions = proposal.aiMetadata?.assumptions || [];
-	const alternatives = proposal.aiMetadata?.alternatives || [];
-	const designParams = proposal.aiMetadata?.technicalData?.designParameters;
+	const technicalData = proposal.aiMetadata.proposal.technicalData;
+	const assumptions = technicalData.assumptions || [];
+	const alternatives = technicalData.technologySelection?.rejectedAlternatives || [];
+	const designParams = technicalData.designParameters;
 
 	return (
 		<div className="space-y-6">

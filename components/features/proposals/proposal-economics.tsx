@@ -131,10 +131,10 @@ const formatOpexData = (opexBreakdown?: {
 };
 
 export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
-	const equipment = proposal.equipmentList || [];
-	const technicalData = proposal.aiMetadata?.technicalData;
-	const capexBreakdown = technicalData?.capexBreakdown;
-	const opexBreakdown = technicalData?.opexBreakdown;
+	const technicalData = proposal.aiMetadata.proposal.technicalData;
+	const equipment = technicalData.mainEquipment || [];
+	const capexBreakdown = technicalData.capexBreakdown;
+	const opexBreakdown = technicalData.opexBreakdown;
 
 	// CAPEX Breakdown - use real backend data or fallback to calculated
 	const capexData = formatCapexData(capexBreakdown, equipment);

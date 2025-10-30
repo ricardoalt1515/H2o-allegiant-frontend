@@ -58,7 +58,7 @@ import { ProposalOverview } from "./proposal-overview";
 import { ProposalParameters } from "./proposal-parameters";
 import { ProposalTechnical } from "./proposal-technical";
 import { ProposalWaterQuality } from "./proposal-water-quality";
-import type { AIMetadata, EquipmentSpec, Project, Proposal } from "./types";
+import type { AIMetadata, EquipmentSpec, OperationalData, Project, Proposal } from "./types";
 
 interface ProposalPageProps {
 	proposal: Proposal;
@@ -93,7 +93,7 @@ const PROVEN_CASES_SCROLL_HEIGHT = 220;
 const HIGH_CRITICALITY = "high" as const;
 
 const CONFIDENCE_PERCENT_BY_LEVEL: Record<
-	NonNullable<AIMetadata["confidenceLevel"]>,
+	NonNullable<AIMetadata["proposal"]["confidenceLevel"]>,
 	number
 > = {
 	High: 90,
@@ -120,7 +120,8 @@ export function ProposalPage({
 	const [activeTab, setActiveTab] = useState<ProposalSection>("summary");
 	const [isChecklistOpen, setIsChecklistOpen] = useState<boolean>(false);
 
-	const equipment = proposal.equipmentList || [];
+	const technicalData = proposal.aiMetadata.proposal.technicalData;
+	const equipment = technicalData.mainEquipment || [];
 	const criticalEquipment = useMemo(
 		() => equipment.filter((item) => item.criticality === HIGH_CRITICALITY),
 		[equipment],
@@ -128,11 +129,11 @@ export function ProposalPage({
 
 	// Extract treatment efficiency data
 	const { overallCompliance: compliance, criticalParameters = [] } =
-		proposal.treatmentEfficiency || {};
+		technicalData.treatmentEfficiency || {};
 
 	// Extract AI metadata
-	const { confidenceLevel = null, provenCases = [] } =
-		proposal.aiMetadata || {};
+	const confidenceLevel = proposal.aiMetadata.proposal.confidenceLevel;
+	const provenCases = proposal.aiMetadata.transparency.provenCases;
 
 	const confidenceProgress = confidenceLevel
 		? CONFIDENCE_PERCENT_BY_LEVEL[confidenceLevel]
@@ -167,7 +168,7 @@ export function ProposalPage({
 									<Badge variant={STATUS_BADGE_VARIANT[proposal.status]}>
 										{proposal.status}
 									</Badge>
-									<Badge variant="secondary">{proposal.type}</Badge>
+									<Badge variant="secondary">{proposal.proposalType}</Badge>
 								</div>
 							</div>
 							<div className="mt-1 text-xs text-muted-foreground md:text-sm">
@@ -249,7 +250,7 @@ export function ProposalPage({
 								/>
 								<RiskHighlightsCard
 									equipment={equipment}
-									operationalData={proposal.operationalData}
+									operationalData={technicalData.operationalData}
 								/>
 							</div>
 						</TabsContent>
@@ -264,19 +265,17 @@ export function ProposalPage({
 									description="The agent did not produce equipment data for this run. Review the inputs or request a new analysis."
 								/>
 							)}
-							{proposal.aiMetadata?.technicalData?.designParameters ||
-							proposal.operationalData ? (
+							{technicalData.designParameters ||
+							technicalData.operationalData ? (
 								<ProposalParameters
-									designParameters={
-										proposal.aiMetadata?.technicalData?.designParameters
-									}
-									operationalData={proposal.operationalData}
+									designParameters={technicalData.designParameters}
+									operationalData={technicalData.operationalData}
 								/>
 							) : null}
 						</TabsContent>
 
 						<TabsContent value="water" className="space-y-6">
-							{proposal.treatmentEfficiency ? (
+							{technicalData.treatmentEfficiency ? (
 								<ProposalWaterQuality proposal={proposal} />
 							) : (
 								<EmptyState
@@ -293,10 +292,7 @@ export function ProposalPage({
 
 						<TabsContent value="ai" className="space-y-6">
 							{proposal.aiMetadata ? (
-								<>
-									<ProposalAISection proposal={proposal} />
-									<AlternativesCard aiMetadata={proposal.aiMetadata} />
-								</>
+								<ProposalAISection proposal={proposal} />
 							) : (
 								<EmptyState
 									icon={Brain}
@@ -307,7 +303,7 @@ export function ProposalPage({
 						</TabsContent>
 
 						<TabsContent value="assumptions" className="space-y-6">
-							{proposal.aiMetadata?.assumptions?.length ? (
+							{technicalData.assumptions?.length ? (
 								<ProposalAssumptions proposal={proposal} />
 							) : (
 								<EmptyState
@@ -367,9 +363,9 @@ function ProposalPageSkeleton() {
 interface DecisionSidebarProps {
 	proposal: Proposal;
 	compliance: boolean | undefined;
-	confidenceLevel: AIMetadata["confidenceLevel"] | null;
+	confidenceLevel: AIMetadata["proposal"]["confidenceLevel"];
 	confidenceProgress: number | undefined;
-	provenCases: NonNullable<AIMetadata["provenCases"]>;
+	provenCases: AIMetadata["transparency"]["provenCases"];
 	criticalParameters: string[];
 	criticalEquipment: EquipmentSpec[];
 	onDownloadPDF: (() => void) | undefined;
@@ -465,7 +461,7 @@ function DecisionSidebar({
 }
 
 interface AIConfidenceCardProps {
-	confidenceLevel: AIMetadata["confidenceLevel"] | null;
+	confidenceLevel: AIMetadata["proposal"]["confidenceLevel"];
 	confidenceProgress: number | undefined;
 }
 
@@ -713,7 +709,7 @@ function ComplianceSnapshotCard({
 
 interface RiskHighlightsCardProps {
 	equipment: EquipmentSpec[];
-	operationalData?: Proposal["operationalData"];
+	operationalData?: OperationalData | undefined;
 }
 
 function RiskHighlightsCard({
@@ -784,88 +780,8 @@ function RiskHighlightsCard({
 	);
 }
 
-interface AlternativesCardProps {
-	aiMetadata: AIMetadata;
-}
-
-function AlternativesCard({ aiMetadata }: AlternativesCardProps) {
-	const { technologyJustification = [], alternatives = [] } = aiMetadata;
-
-	if (technologyJustification.length === 0 && alternatives.length === 0) {
-		return null;
-	}
-
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="flex items-center gap-2 text-lg font-semibold">
-					<SlidersHorizontal className="h-5 w-5" />
-					Technology selection
-				</CardTitle>
-				<CardDescription>
-					Record of why the proposed technology was selected and which options
-					were discarded.
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="space-y-6">
-				{technologyJustification.length > 0 && (
-					<div className="space-y-3">
-						<h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-							Selected technologies
-						</h4>
-						<div className="space-y-3">
-							{technologyJustification.map((tech) => (
-								<div
-									key={`${tech.stage}-${tech.technology}`}
-									className="rounded-lg border border-border/70 bg-card/60 p-4"
-								>
-									<div className="flex flex-wrap items-start justify-between gap-2">
-										<Badge variant="outline">{tech.stage}</Badge>
-										<span className="text-sm font-medium">
-											{tech.technology}
-										</span>
-									</div>
-									<p className="mt-2 text-sm text-muted-foreground">
-										{tech.justification}
-									</p>
-								</div>
-							))}
-						</div>
-					</div>
-				)}
-
-				{alternatives.length > 0 && (
-					<div className="space-y-3">
-						<h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-							Evaluated alternatives
-						</h4>
-						<div className="space-y-2">
-							{alternatives.map((alternative) => (
-								<div
-									key={`${alternative.technology}-${alternative.reasonRejected}`}
-									className="rounded-lg border border-destructive/30 bg-destructive/10 p-4"
-								>
-									<div className="flex items-center justify-between gap-3">
-										<span className="text-sm font-medium">
-											{alternative.technology}
-										</span>
-										<Badge variant="destructive">Rejected</Badge>
-									</div>
-									<p className="mt-2 text-xs text-muted-foreground leading-snug">
-										{alternative.reasonRejected}
-									</p>
-								</div>
-							))}
-						</div>
-					</div>
-				)}
-			</CardContent>
-		</Card>
-	);
-}
-
 interface ProvenCasesCardProps {
-	provenCases: AIMetadata["provenCases"];
+	provenCases: AIMetadata["transparency"]["provenCases"];
 }
 
 function ProvenCasesCard({ provenCases }: ProvenCasesCardProps) {
@@ -887,7 +803,7 @@ function ProvenCasesCard({ provenCases }: ProvenCasesCardProps) {
 					style={{ height: PROVEN_CASES_SCROLL_HEIGHT }}
 				>
 					<ul className="space-y-4">
-						{provenCases.map((reference) => (
+						{provenCases.map((reference: any) => (
 							<li
 								key={`${reference.projectName}-${reference.treatmentTrain}-${reference.applicationType}`}
 								className="rounded-lg border border-border/70 bg-card/60 p-4"
