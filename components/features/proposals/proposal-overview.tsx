@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatNumber, formatUSD } from "@/lib/utils";
 import type { Proposal } from "./types";
 
 interface ProposalOverviewProps {
@@ -43,11 +43,7 @@ export function ProposalOverview({ proposal }: ProposalOverviewProps) {
 					<MetricCard
 						icon={DollarSign}
 						label="Total Investment"
-						value={formatCurrency(proposal.capex, {
-							locale: "en-US",
-							minimumFractionDigits: 0,
-							maximumFractionDigits: 0,
-						})}
+						value={formatUSD(proposal.capex)}
 						subtitle={`ROI: ${technicalData?.roiPercent ? `${formatNumber(technicalData.roiPercent)}%` : "N/A"}`}
 						variant="primary"
 					/>
@@ -55,11 +51,7 @@ export function ProposalOverview({ proposal }: ProposalOverviewProps) {
 					<MetricCard
 						icon={TrendingUp}
 						label="Annual Operating Cost"
-						value={formatCurrency(proposal.opex, {
-							locale: "en-US",
-							minimumFractionDigits: 0,
-							maximumFractionDigits: 0,
-						})}
+						value={formatUSD(proposal.opex)}
 						subtitle="OPEX/year"
 						variant="chart-2"
 					/>

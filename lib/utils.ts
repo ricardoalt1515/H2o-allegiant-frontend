@@ -66,3 +66,15 @@ export function formatPercent(value: number | undefined): string {
 	if (value === undefined || value === null) return "0%";
 	return `${formatNumber(value, 1)}%`;
 }
+
+/**
+ * Format currency as USD without decimals (common use case in proposals)
+ * Usage: formatUSD(1234567) -> "$1,234,567"
+ */
+export function formatUSD(value: number | string | null | undefined): string {
+	return formatCurrency(value, {
+		locale: "en-US",
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	});
+}

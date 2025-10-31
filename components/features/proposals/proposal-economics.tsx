@@ -22,7 +22,7 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import { capexChartConfig, opexChartConfig } from "@/lib/chart-config";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatNumber, formatUSD } from "@/lib/utils";
 import type { Proposal } from "./types";
 
 interface ProposalEconomicsProps {
@@ -166,11 +166,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-3xl font-bold">
-							{formatCurrency(proposal.capex, {
-								locale: "en-US",
-								minimumFractionDigits: 0,
-								maximumFractionDigits: 0,
-							})}
+							{formatUSD(proposal.capex)}
 						</div>
 						<p className="text-xs text-muted-foreground mt-1">
 							Capital investment
@@ -184,11 +180,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-3xl font-bold">
-							{formatCurrency(proposal.opex, {
-								locale: "en-US",
-								minimumFractionDigits: 0,
-								maximumFractionDigits: 0,
-							})}
+							{formatUSD(proposal.opex)}
 						</div>
 						<p className="text-xs text-muted-foreground mt-1">
 							Operating costs per year
@@ -232,13 +224,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 								<ChartTooltip
 									content={
 										<ChartTooltipContent
-											formatter={(value) =>
-												formatCurrency(value as number, {
-													locale: "en-US",
-													minimumFractionDigits: 0,
-													maximumFractionDigits: 0,
-												})
-											}
+											formatter={(value) => formatUSD(value as number)}
 										/>
 									}
 								/>
@@ -270,11 +256,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 									className="fill-foreground"
 								>
 									<tspan x="50%" dy="-0.5em" className="text-2xl font-bold">
-										{formatCurrency(totalCapex, {
-											locale: "en-US",
-											minimumFractionDigits: 0,
-											maximumFractionDigits: 0,
-										})}
+										{formatUSD(totalCapex)}
 									</tspan>
 									<tspan
 										x="50%"
@@ -308,13 +290,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 									<ChartTooltip
 										content={
 											<ChartTooltipContent
-												formatter={(value) =>
-													formatCurrency(value as number, {
-														locale: "en-US",
-														minimumFractionDigits: 0,
-														maximumFractionDigits: 0,
-													})
-												}
+												formatter={(value) => formatUSD(value as number)}
 											/>
 										}
 									/>
@@ -346,11 +322,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 										className="fill-foreground"
 									>
 										<tspan x="50%" dy="-0.5em" className="text-2xl font-bold">
-											{formatCurrency(proposal.opex, {
-												locale: "en-US",
-												minimumFractionDigits: 0,
-												maximumFractionDigits: 0,
-											})}
+											{formatUSD(proposal.opex)}
 										</tspan>
 										<tspan
 											x="50%"
@@ -379,15 +351,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 									<CartesianGrid strokeDasharray="3 3" />
 									<XAxis dataKey="year" />
 									<YAxis />
-									<Tooltip
-										formatter={(value: number) =>
-											formatCurrency(value, {
-												locale: "en-US",
-												minimumFractionDigits: 0,
-												maximumFractionDigits: 0,
-											})
-										}
-									/>
+									<Tooltip formatter={(value: number) => formatUSD(value)} />
 									<Line
 										type="monotone"
 										dataKey="opex"
@@ -420,24 +384,12 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 									/>
 									<span className="font-medium">{item.label}</span>
 								</div>
-								<span className="font-mono">
-									{formatCurrency(item.value, {
-										locale: "en-US",
-										minimumFractionDigits: 0,
-										maximumFractionDigits: 0,
-									})}
-								</span>
+								<span className="font-mono">{formatUSD(item.value)}</span>
 							</div>
 						))}
 						<div className="flex items-center justify-between py-2 pt-4 border-t-2 font-bold">
 							<span>Total CAPEX</span>
-							<span>
-								{formatCurrency(proposal.capex, {
-									locale: "en-US",
-									minimumFractionDigits: 0,
-									maximumFractionDigits: 0,
-								})}
-							</span>
+							<span>{formatUSD(proposal.capex)}</span>
 						</div>
 					</div>
 				</CardContent>

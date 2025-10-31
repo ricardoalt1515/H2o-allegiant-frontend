@@ -69,12 +69,6 @@ interface ProjectState {
 	) => Promise<void>;
 	deleteProject: (id: string) => Promise<void>;
 
-	// Timeline actions
-	addTimelineEvent: (
-		projectId: string,
-		event: Omit<TimelineEvent, "id">,
-	) => Promise<void>;
-
 	// Utility actions
 	clearError: () => void;
 	setLoading: (loading: boolean) => void;
@@ -222,14 +216,6 @@ export const useProjectStore = create<ProjectState>()(
 						state.dataSource = "api";
 					});
 
-					await get().addTimelineEvent(summary.id, {
-						type: "version",
-						title: "Proyecto creado",
-						description: `Proyect "${summary.name}" creado desde el asistente rápido`,
-						user: "Usuario actual",
-						timestamp: new Date().toISOString(),
-					});
-
 					return summary;
 				} catch (error) {
 					logger.error("Failed to create project", error, "ProjectStore");
@@ -272,14 +258,6 @@ export const useProjectStore = create<ProjectState>()(
 						}
 
 						state.dataSource = "api";
-					});
-
-					await get().addTimelineEvent(id, {
-						type: "edit",
-						title: "Proyecto actualizado",
-						description: "Información del proyecto actualizada",
-						user: "Usuario actual",
-						timestamp: new Date().toISOString(),
 					});
 				} catch (error) {
 					logger.error("Failed to update project", error, "ProjectStore");
@@ -336,22 +314,6 @@ export const useProjectStore = create<ProjectState>()(
 			// ✅ USE INSTEAD: ProposalsAPI from '@/lib/api/proposals'
 			// After proposal operations, call loadProject(id) to refresh data
 
-			addTimelineEvent: async (
-				projectId: string,
-				event: Omit<TimelineEvent, "id">,
-			) => {
-				const newEvent: TimelineEvent = {
-					...event,
-					id: crypto.randomUUID(),
-				};
-
-				set((state) => {
-					if (state.currentProject?.id === projectId) {
-						state.currentProject.timeline.unshift(newEvent); // Add to beginning for most recent first
-					}
-				});
-			},
-
 			clearError: () => {
 				set((state) => {
 					state.error = null;
@@ -397,7 +359,6 @@ export const useProjectActions = () =>
 			createProject: state.createProject,
 			updateProject: state.updateProject,
 			deleteProject: state.deleteProject,
-			addTimelineEvent: state.addTimelineEvent,
 			clearError: state.clearError,
 			setLoading: state.setLoading,
 			filteredProjects: state.filteredProjects,

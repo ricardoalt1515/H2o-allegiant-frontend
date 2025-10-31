@@ -15,7 +15,6 @@ import {
 	Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type React from "react";
 import { memo, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -97,7 +96,6 @@ const ProjectCard = memo(function ProjectCard({
 	proposalsCount = 0,
 	className,
 }: ProjectCardProps) {
-	const router = useRouter();
 	const { deleteProject } = useProjectActions();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -153,7 +151,7 @@ const ProjectCard = memo(function ProjectCard({
 				description: `"${name}" has been successfully deleted`,
 			});
 			setShowDeleteDialog(false);
-			router.refresh();
+			// ✅ No router.refresh() needed - Zustand optimistic update handles UI reactivity
 		} catch (_error) {
 			toast.error("Deletion error", {
 				description: "Could not delete the project. Please try again.",
@@ -337,18 +335,22 @@ const ProjectCard = memo(function ProjectCard({
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Project?</AlertDialogTitle>
-						<AlertDialogDescription>
-							You are about to delete <strong>{name}</strong>. This action
-							cannot be undone and will delete:
-							<ul className="mt-2 list-disc list-inside space-y-1">
-								<li>All captured technical information</li>
-								<li>
-									{proposalsCount} generated proposal
-									{proposalsCount !== 1 ? "s" : ""}
-								</li>
-								<li>Attached files</li>
-								<li>Change history</li>
-							</ul>
+						<AlertDialogDescription asChild>
+							<div>
+								<p>
+									You are about to delete <strong>{name}</strong>. This action
+									cannot be undone and will delete:
+								</p>
+								<ul className="mt-2 list-disc list-inside space-y-1">
+									<li>All captured technical information</li>
+									<li>
+										{proposalsCount} generated proposal
+										{proposalsCount !== 1 ? "s" : ""}
+									</li>
+									<li>Attached files</li>
+									<li>Change history</li>
+								</ul>
+							</div>
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

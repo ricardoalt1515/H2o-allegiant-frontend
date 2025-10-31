@@ -114,10 +114,14 @@ export class ProjectsAPI {
 		await apiClient.delete<void>(`/projects/${projectId}/files/${fileId}`);
 	}
 
-	// ❌ REMOVED: getTechnicalData() and updateTechnicalData()
-	// These methods used the empty relational table 'technical_data'
-	// ✅ USE INSTEAD: projectDataAPI.getData() and projectDataAPI.updateData()
-	// which use the JSONB 'project_data.technical_sections' field
+	static async getTimeline(
+		projectId: string,
+		limit: number = 50,
+	): Promise<any[]> {
+		return apiClient.get<any[]>(
+			`/projects/${projectId}/timeline?limit=${limit}`,
+		);
+	}
 }
 
 export const projectsAPI = ProjectsAPI;

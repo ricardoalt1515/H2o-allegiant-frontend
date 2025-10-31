@@ -66,24 +66,6 @@ const PRIMARY_NAV_LINKS = [
 		icon: Home,
 		description: "View projects",
 	},
-	{
-		name: "Projects",
-		href: "/dashboard",
-		icon: FolderOpen,
-		description: "Manage projects",
-	},
-	{
-		name: "Proposals",
-		href: "/dashboard",
-		icon: FileText,
-		description: "View proposals",
-	},
-	{
-		name: "Settings",
-		href: "/dashboard",
-		icon: Settings,
-		description: "Settings",
-	},
 ];
 
 const QUICK_ACTIONS = [

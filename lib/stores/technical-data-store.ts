@@ -648,22 +648,6 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
 					state.versions[projectId] = [version, ...existing];
 				});
 
-				// Timeline event
-				const projectActions = useProjectStore.getState();
-				if (projectActions?.addTimelineEvent) {
-					projectActions.addTimelineEvent(projectId, {
-						type: "version",
-						title: version.versionLabel,
-						description: `Se generó nueva versión (${changes.length} cambios)`,
-						user: version.createdBy,
-						timestamp: version.createdAt,
-						metadata: {
-							versionId: version.id,
-							source: version.source,
-						},
-					});
-				}
-
 				return version;
 			},
 
