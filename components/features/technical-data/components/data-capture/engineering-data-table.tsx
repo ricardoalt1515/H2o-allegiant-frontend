@@ -111,15 +111,15 @@ const sourceConfig = {
 const importanceConfig = {
 	critical: {
 		label: IMPORTANCE_CONFIG.critical.label,
-		color: IMPORTANCE_CONFIG.critical.color,
+		variant: IMPORTANCE_CONFIG.critical.variant,
 	},
 	recommended: {
 		label: IMPORTANCE_CONFIG.recommended.label,
-		color: IMPORTANCE_CONFIG.recommended.color,
+		variant: IMPORTANCE_CONFIG.recommended.variant,
 	},
 	optional: {
 		label: IMPORTANCE_CONFIG.optional.label,
-		color: IMPORTANCE_CONFIG.optional.color,
+		variant: IMPORTANCE_CONFIG.optional.variant,
 	},
 };
 
@@ -207,20 +207,14 @@ export function EngineeringDataTable({
 							)}
 						</div>
 						{field.importance && (
-							<Badge
-								variant="outline"
-								className={cn(
-									"text-xs",
-									importanceConfig[field.importance].color,
-								)}
-							>
+							<Badge variant={importanceConfig[field.importance].variant}>
 								{importanceConfig[field.importance].label}
 							</Badge>
 						)}
 						{field.hasError && (
 							<Tooltip>
 								<TooltipTrigger>
-									<AlertCircle className="h-4 w-4 text-red-500" />
+									<AlertCircle className="h-4 w-4 text-destructive" />
 								</TooltipTrigger>
 								<TooltipContent>
 									<p>Required field</p>

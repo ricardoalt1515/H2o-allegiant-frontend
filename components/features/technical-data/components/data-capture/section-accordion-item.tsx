@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import {
 	AccordionContent,
 	AccordionItem,
@@ -42,11 +42,18 @@ export const SectionAccordionItem = memo(function SectionAccordionItem({
 	onRemoveField,
 	onRemoveSection,
 }: SectionAccordionItemProps) {
-	const completedFields = section.fields.filter(
-		(f) => f.value && f.value !== "",
-	).length;
-	const totalFields = section.fields.length;
-	const isEmpty = totalFields === 0;
+	// ✅ OPTIMIZACIÓN: Memoizar cálculos para evitar re-cálculos en cada render
+	const { completedFields, totalFields, isEmpty } = useMemo(() => {
+		const completed = section.fields.filter(
+			(f) => f.value && f.value !== "",
+		).length;
+		const total = section.fields.length;
+		return {
+			completedFields: completed,
+			totalFields: total,
+			isEmpty: total === 0,
+		};
+	}, [section.fields]);
 
 	return (
 		<AccordionItem

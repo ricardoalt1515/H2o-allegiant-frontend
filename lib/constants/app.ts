@@ -105,17 +105,17 @@ export const SOURCE_CONFIG = {
 export const IMPORTANCE_CONFIG = {
 	critical: {
 		label: "Critical",
-		color: "bg-red-100 text-red-800 border-red-200",
+		variant: "destructive" as const,
 		description: "Required field that blocks progress if empty",
 	},
 	recommended: {
 		label: "Recommended",
-		color: "bg-amber-100 text-amber-800 border-amber-200",
+		variant: "warning" as const,
 		description: "Suggested for engineering, but does not block workflow",
 	},
 	optional: {
 		label: "Optional",
-		color: "bg-gray-100 text-gray-600 border-gray-200",
+		variant: "secondary" as const,
 		description: "Contextual information completed by user as applicable",
 	},
 } as const;

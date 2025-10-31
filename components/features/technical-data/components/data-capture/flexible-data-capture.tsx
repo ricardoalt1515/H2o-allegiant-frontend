@@ -166,8 +166,12 @@ export function FlexibleDataCapture({
 	// State for fixed sections accordion
 	const [fixedAccordionValue, setFixedAccordionValue] = useState<string[]>(
 		() => {
-			// By default, expand all fixed sections
-			return sections.filter((s) => isFixedSection(s.id)).map((s) => s.id);
+			// ✅ OPTIMIZACIÓN: Solo expandir las primeras 2 secciones para mejorar rendimiento inicial
+			// Expandir todas causa render masivo de cientos de campos
+			return sections
+				.filter((s) => isFixedSection(s.id))
+				.slice(0, 2)
+				.map((s) => s.id);
 		},
 	);
 

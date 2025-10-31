@@ -204,16 +204,10 @@ export function DashboardHero({ onCreateProject }: DashboardHeroProps) {
 								<div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
 									<p className="font-medium text-foreground">Pipeline Status</p>
 									<div className="mt-3 flex items-center gap-2">
-										<Badge
-											variant="outline"
-											className="border-primary/40 bg-primary/10 text-primary"
-										>
+										<Badge variant="default">
 											{quickStats.inPreparation} in preparation
 										</Badge>
-										<Badge
-											variant="outline"
-											className="border-accent/40 bg-accent/10 text-accent-foreground"
-										>
+										<Badge variant="success">
 											{quickStats.readyProposals} ready
 										</Badge>
 									</div>
