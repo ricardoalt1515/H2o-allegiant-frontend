@@ -179,9 +179,7 @@ export function ProposalEconomics({ proposal }: ProposalEconomicsProps) {
 						<CardTitle className="text-sm">Annual OPEX</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className="text-3xl font-bold">
-							{formatUSD(proposal.opex)}
-						</div>
+						<div className="text-3xl font-bold">{formatUSD(proposal.opex)}</div>
 						<p className="text-xs text-muted-foreground mt-1">
 							Operating costs per year
 						</p>

@@ -178,26 +178,27 @@ export function PremiumProjectWizard({
 				tags: [projectData.sector, projectData.subsector].filter(Boolean),
 			});
 
-			// ✅ DISABLED: Auto-template application (users can apply templates manually)
-			// Templates are now applied manually from the UI, not automatically
-			// This ensures users get the standard createInitialTechnicalSheetData() template
-			//
-			// To re-enable automatic templates, uncomment the code below:
-			/*
-      try {
-        const { getTemplateForProject } = await import('@/lib/templates/technical-templates')
-        const { projectDataAPI } = await import('@/lib/api/project-data')
-        
-        const template = getTemplateForProject(projectData.sector, projectData.subsector)
-        if (template) {
-          await projectDataAPI.updateData(newProject.id, {
-            technical_sections: template.sections
-          })
-        }
-      } catch (templateError) {
-        // Template application failed - will use fallback on load
-      }
-      */
+			// ✅ Auto-apply template based on sector/subsector
+			try {
+				const { createInitialTechnicalSheetData } = await import(
+					"@/lib/technical-sheet-data"
+				);
+				const { projectDataAPI } = await import("@/lib/api/project-data");
+
+				// Create sections from template (fail fast if template not found)
+				const sections = createInitialTechnicalSheetData(
+					projectData.sector,
+					projectData.subsector,
+				);
+
+				// Save to backend
+				await projectDataAPI.updateData(newProject.id, {
+					technical_sections: sections,
+				});
+			} catch (templateError) {
+				// Template application failed - will use fallback on load
+				console.warn("Template auto-application failed:", templateError);
+			}
 
 			toast.success("Project created successfully!", {
 				description: `${projectData.name} is ready to configure`,

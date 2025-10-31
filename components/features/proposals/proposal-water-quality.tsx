@@ -27,7 +27,8 @@ interface ProposalWaterQualityProps {
 }
 
 export function ProposalWaterQuality({ proposal }: ProposalWaterQualityProps) {
-	const efficiency = proposal.aiMetadata.proposal.technicalData.treatmentEfficiency;
+	const efficiency =
+		proposal.aiMetadata.proposal.technicalData.treatmentEfficiency;
 
 	if (!efficiency) {
 		return null;

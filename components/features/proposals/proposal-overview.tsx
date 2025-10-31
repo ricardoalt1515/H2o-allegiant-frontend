@@ -33,8 +33,7 @@ export function ProposalOverview({ proposal }: ProposalOverviewProps) {
 				<div>
 					<h1 className="text-4xl font-bold mb-2">{proposal.title}</h1>
 					<p className="text-xl text-muted-foreground">
-						Design Flow:{" "}
-						{technicalData?.designFlowM3Day || "N/A"} m³/day
+						Design Flow: {technicalData?.designFlowM3Day || "N/A"} m³/day
 					</p>
 				</div>
 

@@ -378,4 +378,3 @@ function formatDateTime(value: string): string {
 		timeStyle: "short",
 	}).format(new Date(value));
 }
-

@@ -263,3 +263,72 @@ export const sourceBreakdown = (sections: TableSection[]) => {
 		{} as Record<DataSource, number>,
 	);
 };
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TEMPLATE INITIALIZATION - Create sections from templates
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/**
+ * Create initial technical sheet data using template system
+ *
+ * Selects optimal template based on sector/subsector and materializes
+ * fields from parameter library.
+ *
+ * @param sector - Project sector (optional)
+ * @param subsector - Project subsector (optional)
+ * @returns Complete TableSection[] ready for use
+ *
+ * @example
+ * // Create with base template
+ * const sections = createInitialTechnicalSheetData()
+ *
+ * // Create with sector-specific template
+ * const sections = createInitialTechnicalSheetData("industrial", "oil_gas")
+ */
+export function createInitialTechnicalSheetData(
+	sector?: string,
+	subsector?: string,
+): TableSection[] {
+	try {
+		// Import template system (lazy to avoid circular deps)
+		const {
+			createTemplateRegistry,
+			getTemplateForProject,
+			applyTemplate,
+		} = require("@/lib/templates");
+
+		// Create registry and find best template
+		const registry = createTemplateRegistry();
+		const template = getTemplateForProject(sector, subsector, registry);
+
+		if (!template) {
+			// Fail fast: If no template found, throw error
+			throw new Error(
+				`No template found for sector="${sector}" subsector="${subsector}"`,
+			);
+		}
+
+		// Apply template and return materialized sections
+		const sections = applyTemplate(template.id, registry);
+
+		const totalFields = sections.reduce(
+			(sum: number, s: TableSection) => sum + s.fields.length,
+			0,
+		);
+
+		logger.info(
+			`Template applied: ${template.name} (${sections.length} sections, ${totalFields} fields)`,
+			"TechnicalSheet",
+		);
+
+		return sections;
+	} catch (error) {
+		// Fail fast: Log error and re-throw
+		logger.error(
+			"Failed to create initial technical sheet data",
+			error,
+			"TechnicalSheet",
+		);
+		throw error;
+	}
+}

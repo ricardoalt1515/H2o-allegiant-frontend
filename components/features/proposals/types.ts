@@ -165,10 +165,10 @@ export interface Proposal {
 	opex: number;
 	executiveSummary: string;
 	technicalApproach: string;
-	
+
 	// Single source of truth - all data here
 	aiMetadata: AIMetadata;
-	
+
 	pdfPath?: string;
 }
 

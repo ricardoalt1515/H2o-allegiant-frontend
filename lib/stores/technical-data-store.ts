@@ -283,19 +283,50 @@ export const useTechnicalDataStore = create<TechnicalDataState>()(
 						| TableSection[]
 						| undefined;
 
-					// Fail fast: Backend should provide data
+					// Fallback: Create from base template if no data exists
 					if (!rawSections || rawSections.length === 0) {
-						logger.warn(
-							"No technical data from backend - project may be incomplete",
+						logger.info(
+							"No technical data found - applying base template",
 							"TechnicalDataStore",
 						);
 
-						// Empty data is valid (user will add manually)
-						set((state) => {
-							state.technicalData[projectId] = [];
-							state.loading = false;
-						});
-						return;
+						try {
+							// Import and use base template as fallback
+							const { createInitialTechnicalSheetData } = await import(
+								"@/lib/technical-sheet-data"
+							);
+
+							// Use base template (no sector/subsector = universal template)
+							const baseSections = createInitialTechnicalSheetData();
+
+							// Save to backend for persistence
+							await projectDataAPI.updateData(projectId, {
+								technical_sections: baseSections,
+							});
+
+							// Save to store
+							set((state) => {
+								state.technicalData[projectId] = baseSections;
+								state.loading = false;
+							});
+
+							logger.info(
+								`Base template applied (${baseSections.length} sections)`,
+								"TechnicalDataStore",
+							);
+							return;
+						} catch (templateError) {
+							// Fail gracefully: If template fails, use empty array
+							logger.warn(
+								"Base template failed, starting with empty data",
+								"TechnicalDataStore",
+							);
+							set((state) => {
+								state.technicalData[projectId] = [];
+								state.loading = false;
+							});
+							return;
+						}
 					}
 
 					// Rehydrate: Restore JS functions and library metadata

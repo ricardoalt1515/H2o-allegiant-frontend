@@ -13,7 +13,8 @@ interface ProposalAssumptionsProps {
 export function ProposalAssumptions({ proposal }: ProposalAssumptionsProps) {
 	const technicalData = proposal.aiMetadata.proposal.technicalData;
 	const assumptions = technicalData.assumptions || [];
-	const alternatives = technicalData.technologySelection?.rejectedAlternatives || [];
+	const alternatives =
+		technicalData.technologySelection?.rejectedAlternatives || [];
 	const designParams = technicalData.designParameters;
 
 	return (

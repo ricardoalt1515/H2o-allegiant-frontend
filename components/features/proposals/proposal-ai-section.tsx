@@ -42,10 +42,14 @@ export function ProposalAISection({ proposal }: ProposalAISectionProps) {
 
 	const confidence = aiMetadata.proposal.confidenceLevel || "Medium";
 	const provenCases = aiMetadata.transparency.provenCases || [];
-	
+
 	// Technology selection from technical data
-	const selectedTechnologies = aiMetadata.proposal.technicalData.technologySelection?.selectedTechnologies || [];
-	const rejectedAlternatives = aiMetadata.proposal.technicalData.technologySelection?.rejectedAlternatives || [];
+	const selectedTechnologies =
+		aiMetadata.proposal.technicalData.technologySelection
+			?.selectedTechnologies || [];
+	const rejectedAlternatives =
+		aiMetadata.proposal.technicalData.technologySelection
+			?.rejectedAlternatives || [];
 
 	// Helper: Calculate confidence score from level
 	const getConfidenceScore = (level: typeof confidence): number => {
